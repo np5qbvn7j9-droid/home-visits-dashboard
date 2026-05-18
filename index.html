@@ -2035,13 +2035,16 @@ function showSection(secId){
 /* scroll nav removed */
 
 /* ── Init ── */
+try{
 {const saved=localStorage.getItem("theme");
  if(saved==="light"){document.body.classList.add("light");const b=document.getElementById("btnTheme");if(b)b.textContent="☀️ فاتح";}
 }
 {const lastDate=RAW.filter(d=>d.date).map(d=>d.date).sort().pop()||"";
  const el=document.getElementById("lastDataDate");
  if(el&&lastDate)el.textContent="آخر تحديث: "+lastDate;}
+console.log("RAW count:",RAW.length,"MATCHES count:",MATCHES_RAW.length);
 populateFilters(RAW);applyFilters();
+}catch(initErr){document.title="ERROR";alert("خطأ في التهيئة: "+initErr.message+"\n\nالسطر: "+initErr.stack);}
 ["filterMonth","filterVisitType","filterPractitioner","filterBranch","filterPayment","filterDriver"].forEach(id=>{
   document.getElementById(id).addEventListener("change",applyFilters);
 });
