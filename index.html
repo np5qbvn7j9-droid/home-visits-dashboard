@@ -708,9 +708,11 @@ function resetFilters(){
 
 /* ── RENDER ── */
 function render(){
+  document.title="RAW:"+RAW.length+" fd:"+fd.length+" M:"+MATCHES_RAW.length;
   const mo_m=document.getElementById("filterMonth").value;
   const matchData=MATCHES_RAW.filter(d=>!mo_m||d.date.startsWith(mo_m));
   const noVisits=fd.length===0, noMatches=matchData.length===0;
+  if(noVisits&&noMatches){document.title+=" EMPTY!";}
 
   // إذا لا توجد بيانات من أي نوع — أظهر رسالة وامسح كل شيء
   {const es=document.getElementById("emptyState");
@@ -2019,7 +2021,11 @@ let _activeSec='sec-overview';
 function renderAll(){
   // Show all sections so Chart.js can measure canvas dimensions, then re-hide
   document.querySelectorAll('.dash-section').forEach(s=>s.style.display='block');
-  render();
+  try{
+    render();
+  }catch(renderErr){
+    alert("خطأ في render():\n"+renderErr.message+"\n\nالسطر:\n"+renderErr.stack);
+  }
   showSection(_activeSec);
 }
 function showSection(secId){
