@@ -2021,11 +2021,7 @@ let _activeSec='sec-overview';
 function renderAll(){
   // Show all sections so Chart.js can measure canvas dimensions, then re-hide
   document.querySelectorAll('.dash-section').forEach(s=>s.style.display='block');
-  try{
-    render();
-  }catch(renderErr){
-    alert("خطأ في render():\n"+renderErr.message+"\n\nالسطر:\n"+renderErr.stack);
-  }
+  render();
   showSection(_activeSec);
 }
 function showSection(secId){
@@ -2041,7 +2037,6 @@ function showSection(secId){
 /* scroll nav removed */
 
 /* ── Init ── */
-try{
 {const saved=localStorage.getItem("theme");
  if(saved==="light"){document.body.classList.add("light");const b=document.getElementById("btnTheme");if(b)b.textContent="☀️ فاتح";}
 }
