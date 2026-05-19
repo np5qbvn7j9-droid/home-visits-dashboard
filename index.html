@@ -255,6 +255,17 @@ body.light input[style]{background:#ffffff !important;color:#0f172a !important;b
 body.light .kpi-delta.flat{color:#475569;background:rgba(71,85,105,0.1);}
 body.light .filter-badge{color:#ffffff;}
 body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
+/* ── Multi-select dropdown ── */
+.ms-wrap{position:relative;min-width:130px;}
+.ms-btn{background:var(--bg-base);border:1px solid var(--border-deep);border-radius:6px;color:var(--text-main);padding:4px 7px;font-family:"Cairo";font-size:0.72rem;cursor:pointer;width:100%;text-align:right;display:flex;align-items:center;justify-content:space-between;gap:4px;white-space:nowrap;}
+.ms-btn:focus{outline:none;border-color:#38bdf8;}
+.ms-btn .ms-arrow{font-size:0.5rem;color:var(--text-muted);}
+.ms-drop{display:none;position:absolute;top:100%;right:0;left:0;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px var(--shadow);z-index:200;max-height:220px;overflow-y:auto;margin-top:3px;padding:4px 0;}
+.ms-drop.open{display:block;}
+.ms-drop label{display:flex;align-items:center;gap:6px;padding:5px 10px;font-size:0.72rem;cursor:pointer;color:var(--text-body);transition:background 0.15s;}
+.ms-drop label:hover{background:rgba(56,189,248,0.08);}
+.ms-drop input[type="checkbox"]{accent-color:#38bdf8;width:14px;height:14px;cursor:pointer;}
+.ms-drop .ms-all{border-bottom:1px solid var(--border);margin-bottom:2px;font-weight:700;color:var(--text-main);}
 /* ── Print ── */
 @media print{
   .section-nav,.filters-bar,.btn-upload,.btn-theme,.btn-print,.btn-export,.modal-overlay,#uploadModal,.filter-badge{display:none!important;}
@@ -333,7 +344,7 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
 
 <!-- FILTERS -->
 <div class="filters-bar">
-  <div class="filter-group"><label>الشهر</label><select id="filterMonth"><option value="">الكل</option></select></div>
+  <div class="filter-group"><label>الشهر</label><div class="ms-wrap" id="filterMonthWrap"><button type="button" class="ms-btn" id="filterMonthBtn" onclick="toggleMonthDrop()"><span id="filterMonthLabel">الكل</span><span class="ms-arrow">▼</span></button><div class="ms-drop" id="filterMonthDrop"></div></div></div>
   <div class="filter-group"><label>نوع الزيارة</label><select id="filterVisitType"><option value="">الكل</option></select></div>
   <div class="filter-group"><label>اسم الممارس</label><select id="filterPractitioner"><option value="">الكل</option></select></div>
   <div class="filter-group"><label>الفرع</label><select id="filterBranch"><option value="">الكل</option></select></div>
@@ -656,14 +667,59 @@ function legendCfg(pos){return {position:pos||"bottom",labels:{color:lc(),font:{
 function mk(id,type,data,opts){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id).getContext("2d"),{type,data,options:{responsive:true,maintainAspectRatio:true,...opts}});}
 
 /* ── Filters ── */
+let _selectedMonths=[];
+
+function toggleMonthDrop(){
+  const drop=document.getElementById("filterMonthDrop");
+  drop.classList.toggle("open");
+}
+// Close dropdown when clicking outside
+document.addEventListener("click",e=>{
+  const wrap=document.getElementById("filterMonthWrap");
+  if(wrap&&!wrap.contains(e.target)){document.getElementById("filterMonthDrop").classList.remove("open");}
+});
+
+function _updateMonthLabel(){
+  const lbl=document.getElementById("filterMonthLabel");
+  if(_selectedMonths.length===0){lbl.textContent="الكل";}
+  else if(_selectedMonths.length===1){const[y,m]=_selectedMonths[0].split("-");lbl.textContent=(MN[m]||m)+" "+y;}
+  else{lbl.textContent=_selectedMonths.length+" شهور";}
+}
+
+function _onMonthChange(){
+  const checks=document.querySelectorAll("#filterMonthDrop input[type=checkbox]:not(.ms-all-cb)");
+  const allCb=document.querySelector(".ms-all-cb");
+  _selectedMonths=[];
+  checks.forEach(cb=>{if(cb.checked)_selectedMonths.push(cb.value);});
+  if(allCb)allCb.checked=_selectedMonths.length===0;
+  _updateMonthLabel();
+  applyFilters();
+}
+
+function _onMonthAll(){
+  const checks=document.querySelectorAll("#filterMonthDrop input[type=checkbox]:not(.ms-all-cb)");
+  checks.forEach(cb=>cb.checked=false);
+  _selectedMonths=[];
+  _updateMonthLabel();
+  applyFilters();
+}
+
 function populateFilters(data){
-  const mSel=document.getElementById("filterMonth"),cur=mSel.value;
-  mSel.innerHTML="<option value=\'\'>الكل</option>";
+  // Month multi-select
+  const drop=document.getElementById("filterMonthDrop");
+  const prevSelected=[..._selectedMonths];
   const allMonths=[...new Set([...data,...MATCHES_RAW].map(d=>d.date?d.date.substring(0,7):"").filter(Boolean))].sort();
+  let html='<label class="ms-all"><input type="checkbox" class="ms-all-cb" onchange="_onMonthAll()" '+(prevSelected.length===0?"checked":"")+'>الكل</label>';
   allMonths.forEach(m=>{
-    const[y,mo]=m.split("-"),o=document.createElement("option");
-    o.value=m;o.textContent=(MN[mo]||mo)+" "+y;if(m===cur)o.selected=true;mSel.appendChild(o);
+    const[y,mo]=m.split("-");
+    const checked=prevSelected.includes(m)?"checked":"";
+    html+=`<label><input type="checkbox" value="${m}" onchange="_onMonthChange()" ${checked}>${(MN[mo]||mo)} ${y}</label>`;
   });
+  drop.innerHTML=html;
+  _selectedMonths=prevSelected.filter(m=>allMonths.includes(m));
+  _updateMonthLabel();
+
+  // Other filters (single select)
   const flds={filterVisitType:"visit_type",filterPractitioner:"practitioner",filterBranch:"branch",filterPayment:"payment",filterDriver:"driver"};
   for(let[id,f]of Object.entries(flds)){
     const s=document.getElementById(id),cv=s.value;
@@ -675,14 +731,14 @@ function populateFilters(data){
   }
 }
 function applyFilters(){
-  const mo=document.getElementById("filterMonth").value,
+  const moArr=_selectedMonths,
         vt=document.getElementById("filterVisitType").value,
         pr=document.getElementById("filterPractitioner").value,
         br=document.getElementById("filterBranch").value,
         pm=document.getElementById("filterPayment").value,
         dr=document.getElementById("filterDriver").value;
   fd=RAW.filter(d=>{
-    if(mo&&!d.date.startsWith(mo))return false;
+    if(moArr.length>0&&!moArr.some(m=>d.date.startsWith(m)))return false;
     if(vt&&d.visit_type!==vt)return false;
     if(pr&&d.practitioner!==pr)return false;
     if(br&&d.branch!==br)return false;
@@ -691,17 +747,21 @@ function applyFilters(){
     return true;
   });
   const lbl=document.getElementById("headerSubtitle");
-  if(mo){const[y,m]=mo.split("-");lbl.textContent=(MN[m]||m)+" "+y;}else lbl.textContent="جميع الأشهر";
+  if(moArr.length===1){const[y,m]=moArr[0].split("-");lbl.textContent=(MN[m]||m)+" "+y;}
+  else if(moArr.length>1){lbl.textContent=moArr.length+" شهور مختارة";}
+  else lbl.textContent="جميع الأشهر";
   // Filter badge
-  const active=[mo,vt,pr,br,pm,dr].filter(Boolean).length;
+  const active=[(moArr.length>0?"1":""),vt,pr,br,pm,dr].filter(Boolean).length;
   const badge=document.getElementById("filterBadge");
   if(badge){if(active>0){badge.textContent=active+" فلتر نشط";badge.classList.add("show");}else badge.classList.remove("show");}
-  // Save filters to localStorage for persistence
-  try{localStorage.setItem("dashFilters",JSON.stringify({mo,vt,pr,br,pm,dr}));}catch(e){}
+  try{localStorage.setItem("dashFilters",JSON.stringify({moArr,vt,pr,br,pm,dr}));}catch(e){}
   renderAll();
 }
 function resetFilters(){
-  ["filterMonth","filterVisitType","filterPractitioner","filterBranch","filterPayment","filterDriver"].forEach(id=>document.getElementById(id).value="");
+  _selectedMonths=[];
+  _updateMonthLabel();
+  document.querySelectorAll("#filterMonthDrop input[type=checkbox]").forEach(cb=>{cb.checked=cb.classList.contains("ms-all-cb");});
+  ["filterVisitType","filterPractitioner","filterBranch","filterPayment","filterDriver"].forEach(id=>document.getElementById(id).value="");
   const badge=document.getElementById("filterBadge");
   if(badge)badge.classList.remove("show");
   try{localStorage.removeItem("dashFilters");}catch(e){}
@@ -710,8 +770,8 @@ function resetFilters(){
 
 /* ── RENDER ── */
 function render(){
-  const mo_m=document.getElementById("filterMonth").value;
-  const matchData=MATCHES_RAW.filter(d=>!mo_m||d.date.startsWith(mo_m));
+  const moArr=_selectedMonths;
+  const matchData=MATCHES_RAW.filter(d=>moArr.length===0||moArr.some(m=>d.date.startsWith(m)));
   const noVisits=fd.length===0, noMatches=matchData.length===0;
 
   // إذا لا توجد بيانات من أي نوع — أظهر رسالة وامسح كل شيء
@@ -785,7 +845,7 @@ function render(){
 
   // ── KPI MoM Delta ──
   {const allMR=[...new Set(RAW.filter(d=>d.date).map(d=>d.date.substring(0,7)))].sort();
-   const effLast=mo_m||allMR[allMR.length-1]||null;
+   const effLast=moArr.length===1?moArr[0]:allMR[allMR.length-1]||null;
    const effPrev=effLast?allMR[allMR.indexOf(effLast)-1]||null:null;
    const lRaw=effLast?RAW.filter(d=>d.date&&d.date.startsWith(effLast)):[];
    const pRaw=effPrev?RAW.filter(d=>d.date&&d.date.startsWith(effPrev)):[];
@@ -1831,8 +1891,8 @@ function exportData(){
   ws["!cols"]=[{wch:6},{wch:14},{wch:22},{wch:14},{wch:14},{wch:10},{wch:18},{wch:20},{wch:12},{wch:12},{wch:20},{wch:14}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"الزيارات المنزلية");
-  const mo=document.getElementById("filterMonth").value;
-  XLSX.writeFile(wb,"زيارات_"+(mo||"الكل")+"_"+new Date().toISOString().substring(0,10)+".xlsx");
+  const moLabel=_selectedMonths.length===1?_selectedMonths[0]:(_selectedMonths.length>1?_selectedMonths.length+"شهور":"الكل");
+  XLSX.writeFile(wb,"زيارات_"+moLabel+"_"+new Date().toISOString().substring(0,10)+".xlsx");
 }
 
 /* ── Upload ── */
@@ -2044,7 +2104,7 @@ function showSection(secId){
  const el=document.getElementById("lastDataDate");
  if(el&&lastDate)el.textContent="آخر تحديث: "+lastDate;}
 populateFilters(RAW);applyFilters();
-["filterMonth","filterVisitType","filterPractitioner","filterBranch","filterPayment","filterDriver"].forEach(id=>{
+["filterVisitType","filterPractitioner","filterBranch","filterPayment","filterDriver"].forEach(id=>{
   document.getElementById(id).addEventListener("change",applyFilters);
 });
 /* ── Practitioner Detail Modal ── */
