@@ -399,6 +399,8 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <div class="kpi-card kpi-blue"><div class="kpi-label">متوسط إيرادات يومية</div><div class="kpi-value" id="kpiAvgDayRev">0</div><div class="kpi-sub" id="kpiAvgDayRevSub"></div><div class="kpi-sub" id="kpiAvgDayRevMatch"></div></div>
   <div class="kpi-card kpi-red"><div class="kpi-label">زيارات بدون إيراد</div><div class="kpi-value" id="kpiZeroRev">0</div><div class="kpi-sub" id="kpiZeroRevPct"></div></div>
   <div class="kpi-card kpi-orange"><div class="kpi-label">أعلى فرع إيرادات</div><div class="kpi-value" id="kpiTopBranch" style="font-size:0.95rem">—</div><div class="kpi-sub" id="kpiTopBranchAmt"></div></div>
+  <div class="kpi-card kpi-purple"><div class="kpi-label">نمو الإيرادات (شهر/شهر)</div><div class="kpi-value" id="kpiIncGrowth">—</div><div class="kpi-sub" id="kpiIncGrowthSub"></div></div>
+  <div class="kpi-card kpi-yellow"><div class="kpi-label">توقع الشهر القادم</div><div class="kpi-value" id="kpiIncForecast">—</div><div class="kpi-sub" id="kpiIncForecastSub"></div></div>
 </div>
 <div class="charts-grid">
   <div class="chart-card"><h3>الإيرادات حسب نوع الزيارة</h3><canvas id="chartRevByType" style="max-height:360px"></canvas></div>
@@ -962,6 +964,26 @@ function render(){
   const topClub=Object.entries(matchClubG).sort((a,b)=>b[1]-a[1])[0]||["—",0];
   document.getElementById("kpiTopBranch").textContent=topBr.n.replace("عادل كير ","").replace("بلوديم ","");
   document.getElementById("kpiTopBranchAmt").textContent=fmtC(topBr.r)+" ر.س";
+
+  /* نمو الإيرادات + توقع الشهر القادم */
+  {const _mG={};
+   [...med,...matchData.map(d=>({...d}))].forEach(d=>{if(d.date){const m=d.date.substring(0,7);if(!_mG[m])_mG[m]=0;_mG[m]+=(d.amount||0);}});
+   const _ms=Object.keys(_mG).sort();
+   if(_ms.length>=2){
+     const last=_mG[_ms[_ms.length-1]],prev=_mG[_ms[_ms.length-2]];
+     const g=prev?((last-prev)/prev*100):0;
+     const el=document.getElementById("kpiIncGrowth");
+     el.textContent=(g>=0?"+":"")+g.toFixed(1)+"%";
+     el.style.color=g>=0?"#34d399":"#f87171";
+     document.getElementById("kpiIncGrowthSub").textContent=(MN[_ms[_ms.length-1].split("-")[1]]||"")+" مقارنة بـ "+(MN[_ms[_ms.length-2].split("-")[1]]||"");
+   }
+   if(_ms.length>=2){
+     const last3=_ms.slice(-3).map(m=>_mG[m]);
+     const fc=last3.reduce((a,b)=>a+b,0)/last3.length;
+     document.getElementById("kpiIncForecast").textContent=fmtC(fc);
+     document.getElementById("kpiIncForecastSub").textContent="بناءً على متوسط آخر "+last3.length+" أشهر";
+   }
+  }
 
   /* Monthly trend */
   const monthly={};
