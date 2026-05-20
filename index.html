@@ -331,8 +331,6 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <a href="#sec-pract"    class="nav-item" onclick="setNav(this,event)">أداء الممارسين</a>
   <a href="#sec-financial" class="nav-item" onclick="setNav(this,event)">الأداء المالي</a>
   <a href="#sec-efficiency" class="nav-item" onclick="setNav(this,event)">الكفاءة التشغيلية</a>
-  <a href="#sec-targets" class="nav-item" onclick="setNav(this,event)">الأهداف</a>
-  <a href="#sec-monthly" class="nav-item" onclick="setNav(this,event)">المقارنات الشهرية</a>
   <a href="#sec-ambulance" class="nav-item" onclick="setNav(this,event)">النقل الإسعافي</a>
   <a href="#sec-matches"  class="nav-item" onclick="setNav(this,event)">المباريات</a>
 </nav>
@@ -530,6 +528,38 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <div class="chart-card"><h3>الإيرادات حسب نوع الزيارة</h3><canvas id="chartFnByType"></canvas></div>
   <div class="chart-card"><h3>الإيرادات حسب طريقة السداد</h3><canvas id="chartFnByPayment"></canvas></div>
 </div>
+
+<!-- ── المؤشرات والأهداف ── -->
+<div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--border);">
+<h3 style="color:var(--text-main);margin-bottom:12px;font-size:1rem;">🎯 المؤشرات والأهداف</h3>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
+  <label style="color:var(--text-sub);font-size:0.82rem;">هدف الزيارات الشهري:</label>
+  <input type="number" id="targetVisits" value="150" min="1" style="width:80px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-main);font-family:'Cairo';font-size:0.85rem;" onchange="renderTargets()">
+  <label style="color:var(--text-sub);font-size:0.82rem;">هدف الإيراد الشهري:</label>
+  <input type="number" id="targetRevenue" value="80000" min="1" step="1000" style="width:110px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-main);font-family:'Cairo';font-size:0.85rem;" onchange="renderTargets()">
+</div>
+<div id="targetsGrid" class="kpi-grid"></div>
+<div class="charts-grid">
+  <div class="chart-card full-width"><h3>تحقيق الأهداف الشهرية</h3><canvas id="chartTargets"></canvas></div>
+</div>
+</div>
+
+<!-- ── مقارنة تفصيلية شهر بشهر ── -->
+<div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--border);">
+<h3 style="color:var(--text-main);margin-bottom:12px;font-size:1rem;">📋 مقارنة تفصيلية شهر بشهر</h3>
+<div class="table-card">
+  <div style="overflow-x:auto;">
+    <table id="monthlyCompTable">
+      <thead id="monthlyCompHead"></thead>
+      <tbody id="monthlyCompBody"></tbody>
+    </table>
+  </div>
+</div>
+<div class="charts-grid">
+  <div class="chart-card full-width"><h3>اتجاه المؤشرات الشهرية</h3><canvas id="chartMonthlyComp"></canvas></div>
+</div>
+</div>
+
 </div><!-- /wrap-sec-financial -->
 
 <div class="dash-section" id="wrap-sec-efficiency" style="display:none">
@@ -553,42 +583,6 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <div class="chart-card full-width"><h3>عدد الزيارات اليومي</h3><canvas id="chartEffDaily"></canvas></div>
 </div>
 </div><!-- /wrap-sec-efficiency -->
-
-<div class="dash-section" id="wrap-sec-targets" style="display:none">
-<!-- ════════════════════════════════════════
-  3c. لوحة المؤشرات والأهداف
-════════════════════════════════════════ -->
-<div class="section-title rose" id="sec-targets">المؤشرات والأهداف</div>
-<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
-  <label style="color:var(--text-sub);font-size:0.82rem;">هدف الزيارات الشهري:</label>
-  <input type="number" id="targetVisits" value="150" min="1" style="width:80px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-main);font-family:'Cairo';font-size:0.85rem;" onchange="renderTargets()">
-  <label style="color:var(--text-sub);font-size:0.82rem;">هدف الإيراد الشهري:</label>
-  <input type="number" id="targetRevenue" value="80000" min="1" step="1000" style="width:110px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-main);font-family:'Cairo';font-size:0.85rem;" onchange="renderTargets()">
-</div>
-<div id="targetsGrid" class="kpi-grid"></div>
-<div class="charts-grid">
-  <div class="chart-card full-width"><h3>تحقيق الأهداف الشهرية</h3><canvas id="chartTargets"></canvas></div>
-</div>
-</div><!-- /wrap-sec-targets -->
-
-<div class="dash-section" id="wrap-sec-monthly" style="display:none">
-<!-- ════════════════════════════════════════
-  3d. تقرير المقارنات الشهرية
-════════════════════════════════════════ -->
-<div class="section-title rose" id="sec-monthly">تقرير المقارنات الشهرية</div>
-<div class="table-card">
-  <h3>مقارنة تفصيلية شهر بشهر</h3>
-  <div style="overflow-x:auto;">
-    <table id="monthlyCompTable">
-      <thead id="monthlyCompHead"></thead>
-      <tbody id="monthlyCompBody"></tbody>
-    </table>
-  </div>
-</div>
-<div class="charts-grid">
-  <div class="chart-card full-width"><h3>اتجاه المؤشرات الشهرية</h3><canvas id="chartMonthlyComp"></canvas></div>
-</div>
-</div><!-- /wrap-sec-monthly -->
 
 <div class="dash-section" id="wrap-sec-ambulance" style="display:none">
 <!-- ════════════════════════════════════════
