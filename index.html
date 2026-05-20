@@ -507,10 +507,13 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
 </div>
 <div class="table-card">
   <h3>جدول تفاصيل الممارسين</h3>
-  <div class="tabs">
-    <button class="tab active" onclick="sortPract(this,'revenue')">حسب الإيرادات</button>
-    <button class="tab" onclick="sortPract(this,'visits')">حسب الزيارات</button>
-    <button class="tab" onclick="sortPract(this,'avg')">حسب المتوسط</button>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+    <div class="tabs" style="margin-bottom:0;">
+      <button class="tab active" onclick="sortPract(this,'revenue')">حسب الإيرادات</button>
+      <button class="tab" onclick="sortPract(this,'visits')">حسب الزيارات</button>
+      <button class="tab" onclick="sortPract(this,'avg')">حسب المتوسط</button>
+    </div>
+    <input type="text" id="practSearch" placeholder="🔍 بحث عن ممارس..." oninput="filterPractTable()" style="flex:1;min-width:180px;padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text-body);font-size:0.85rem;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
   </div>
   <div style="max-height:480px;overflow-y:auto;">
     <table><thead><tr><th>#</th><th>الممارس</th><th>الزيارات</th><th>الإيرادات</th><th>المتوسط</th><th>كاش</th><th>تحويل</th><th>% من الكل</th><th>أكثر شهر</th></tr></thead>
@@ -1944,6 +1947,7 @@ function renderVisitsAlerts(med, mK, vtG, medAll) {
 
 /* ── Sort functions ── */
 function sortPract(btn,by){practSort=by;btn.closest(".tabs").querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));btn.classList.add("active");renderAll();}
+function filterPractTable(){const q=document.getElementById("practSearch").value.trim().toLowerCase();document.querySelectorAll("#practBody tr").forEach(r=>{const name=r.cells[1]?r.cells[1].textContent.toLowerCase():"";r.style.display=!q||name.includes(q)?"":"none";});}
 
 /* ── Export ── */
 function exportData(){
