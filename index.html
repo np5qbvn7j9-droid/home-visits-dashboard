@@ -453,6 +453,7 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <table><thead><tr><th>نوع الزيارة</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th><th>% زيارات</th><th>% إيرادات</th></tr></thead>
   <tbody id="visitTypeBody"></tbody></table>
 </div>
+<div id="similarNamesWrap" class="alerts-wrap"></div>
 <div id="visitsAlertsWrap" class="alerts-wrap"></div>
 <div class="summary-card">
   <h4>الملخص التلقائي</h4>
@@ -640,6 +641,68 @@ const FORMER_PRACTS=["عزه","زياد(علاج طبيعي)"];
 function fmt(n){return Number(n).toLocaleString("ar-SA");}
 function fmtC(n){return Number(n).toLocaleString("ar-SA",{maximumFractionDigits:0});}
 function grp(arr,k){return arr.reduce((a,d)=>{const v=d[k]||"-";if(!a[v])a[v]=[];a[v].push(d);return a;},{});}
+
+/* ── مطابقة ذكية لأسماء المرضى ── */
+let _patientNameMap={}, _similarNames=[];
+function buildPatientNameMap(data){
+  const names=[...new Set(data.filter(d=>d.patient&&d.patient!=="-").map(d=>d.patient.trim()))];
+  const map={};// key: original name → value: canonical name
+  const groups={};// key: "first|last" → [{name, parts}]
+  names.forEach(n=>{
+    const p=n.split(/\s+/);
+    if(p.length>=2){
+      const key=p[0]+"|"+p[p.length-1];
+      if(!groups[key])groups[key]=[];
+      groups[key].push({name:n,parts:p});
+    } else {
+      map[n]=n;
+    }
+  });
+  const similar=[];
+  for(const[key,members]of Object.entries(groups)){
+    if(members.length===1){map[members[0].name]=members[0].name;continue;}
+    // sort: longest name first (most complete)
+    members.sort((a,b)=>b.parts.length-a.parts.length);
+    // check if short names (2 parts) can merge with longer ones
+    const long=members.filter(m=>m.parts.length>=3);
+    const short=members.filter(m=>m.parts.length===2);
+    // among long names: check if middle names conflict
+    const longGroups=[];
+    long.forEach(m=>{
+      const found=longGroups.find(g=>g[0].parts[1]===m.parts[1]);
+      if(found)found.push(m); else longGroups.push([m]);
+    });
+    // each longGroup is same person; pick longest as canonical
+    longGroups.forEach(g=>{
+      g.sort((a,b)=>b.name.length-a.name.length);
+      const canon=g[0].name;
+      g.forEach(m=>map[m.name]=canon);
+    });
+    // short names (first+last only): merge with longest canonical if only one group
+    short.forEach(m=>{
+      if(longGroups.length===1){map[m.name]=longGroups[0][0].name;}
+      else if(longGroups.length===0){map[m.name]=m.name;}
+      else {map[m.name]=m.name;/* ambiguous — don't merge */}
+    });
+    // record similar names for alert
+    if(members.length>1){
+      const canonicals=[...new Set(members.map(m=>map[m.name]||m.name))];
+      if(canonicals.length>=1){
+        const merged=members.filter(m=>map[m.name]!==m.name).map(m=>m.name);
+        const unmerged=members.filter(m=>!map[m.name]||map[m.name]===m.name);
+        if(merged.length>0||unmerged.length>1){
+          similar.push({names:members.map(m=>m.name),canonical:members.map(m=>map[m.name]||m.name)});
+        }
+      }
+    }
+  }
+  // names not in any group
+  names.forEach(n=>{if(!map[n])map[n]=n;});
+  _patientNameMap=map;
+  _similarNames=similar;
+  return map;
+}
+function getCanonicalPatient(name){return _patientNameMap[name]||name;}
 function rev(arr){return arr.reduce((s,d)=>s+d.amount,0);}
 function empty(n){return `<tr><td colspan="${n}" style="text-align:center;color:#64748b;padding:12px;">لا توجد بيانات</td></tr>`;}
 const isLight=()=>document.body.classList.contains("light");
@@ -1055,17 +1118,42 @@ function render(){
     });
     const _hTop=Object.entries(_hC).sort((a,b)=>b[1]-a[1])[0];
     if(_hTop){const h=parseInt(_hTop[0]);const ampm=h>=12?(h>12?(h-12)+" مساءً":h+" ظهراً"):(h===0?"12 صباحاً":h+" صباحاً");document.getElementById("kpiVsPeakHour").textContent=ampm;document.getElementById("kpiVsPeakHourSub").textContent=fmt(_hTop[1])+" زيارة";}
-    // مرضى فريدين
-    const _pts=new Set(med.filter(d=>d.patient&&d.patient!=="-").map(d=>d.patient));
-    const _repeat=[...new Set(med.filter(d=>d.patient&&d.patient!=="-").map(d=>d.patient))].filter(p=>med.filter(d=>d.patient===p).length>=2).length;
-    document.getElementById("kpiVsUniqPatients").textContent=fmt(_pts.size);
-    document.getElementById("kpiVsUniqPatientsSub").textContent=fmt(_repeat)+" متكرر";
+    // مرضى مستفيدين (بمطابقة ذكية)
+    const _ptsCanon=new Set(med.filter(d=>d.patient&&d.patient!=="-").map(d=>getCanonicalPatient(d.patient)));
+    const _ptCounts={};med.filter(d=>d.patient&&d.patient!=="-").forEach(d=>{const c=getCanonicalPatient(d.patient);_ptCounts[c]=(_ptCounts[c]||0)+1;});
+    const _repeatCanon=Object.values(_ptCounts).filter(c=>c>=2).length;
+    document.getElementById("kpiVsUniqPatients").textContent=fmt(_ptsCanon.size);
+    document.getElementById("kpiVsUniqPatientsSub").textContent=fmt(_repeatCanon)+" متكرر";
     // أكثر ممارس دخلاً
     const _prG={};med.forEach(d=>{if(d.practitioner&&d.practitioner!=="-"){if(!_prG[d.practitioner])_prG[d.practitioner]={v:0,r:0};_prG[d.practitioner].v++;_prG[d.practitioner].r+=(d.amount||0);}});
     const _prByRev=Object.entries(_prG).sort((a,b)=>b[1].r-a[1].r)[0];
     const _prByVis=Object.entries(_prG).sort((a,b)=>b[1].v-a[1].v)[0];
     if(_prByRev){document.getElementById("kpiVsTopPractRev").textContent=_prByRev[0];document.getElementById("kpiVsTopPractRevSub").textContent=fmtC(_prByRev[1].r)+" ر.س";}
     if(_prByVis){document.getElementById("kpiVsTopPractVis").textContent=_prByVis[0];document.getElementById("kpiVsTopPractVisSub").textContent=fmt(_prByVis[1].v)+" زيارة";}
+    // تنبيه الأسماء المتشابهة
+    const _snWrap=document.getElementById("similarNamesWrap");
+    if(_snWrap&&_similarNames.length>0){
+      const merged=_similarNames.filter(g=>{const u=new Set(g.canonical);return u.size<g.names.length;});
+      const ambiguous=_similarNames.filter(g=>{const u=new Set(g.canonical);return u.size>=g.names.length;});
+      let html="";
+      if(merged.length>0){
+        html+=`<div class="alert-card" style="border-color:#34d399;background:rgba(52,211,153,0.07);"><strong style="color:#34d399;">✅ تم دمج ${merged.length} مجموعة أسماء متشابهة تلقائياً</strong><div style="font-size:0.75rem;margin-top:6px;color:var(--text-sub);max-height:150px;overflow-y:auto;">`;
+        merged.forEach(g=>{
+          const canon=[...new Set(g.canonical)][0];
+          const others=g.names.filter(n=>n!==canon);
+          if(others.length)html+=`<div style="margin-bottom:4px;">🔗 <strong>${canon}</strong> ← ${others.join("، ")}</div>`;
+        });
+        html+=`</div></div>`;
+      }
+      if(ambiguous.length>0){
+        html+=`<div class="alert-card" style="border-color:#fbbf24;background:rgba(251,191,36,0.07);"><strong style="color:#fbbf24;">⚠️ ${ambiguous.length} مجموعة أسماء متشابهة تحتاج مراجعة في الإكسل</strong><div style="font-size:0.75rem;margin-top:6px;color:var(--text-sub);max-height:150px;overflow-y:auto;">`;
+        ambiguous.forEach(g=>{
+          html+=`<div style="margin-bottom:4px;">🔍 ${g.names.join(" ≠ ")}</div>`;
+        });
+        html+=`</div></div>`;
+      }
+      _snWrap.innerHTML=html;
+    } else if(_snWrap){_snWrap.innerHTML="";}
   }
   /* ── Medical Visits Section ── */
   const vtG=grp(med,"visit_type");
@@ -1952,6 +2040,7 @@ function processBuffer(buffer, silent=false){
     }
     if(nm.length>0){MATCHES_RAW=nm;matchMsg=" + "+nm.length+" مباراة";}
   }
+  buildPatientNameMap(RAW);
   populateFilters(RAW);renderAll();
   if(!silent) alert("تم تحديث البيانات!\n✓ "+nd.length+" زيارة"+matchMsg);
   return {visits:nd.length, matchMsg};
@@ -2102,6 +2191,7 @@ function showSection(secId){
 {const lastDate=RAW.filter(d=>d.date).map(d=>d.date).sort().pop()||"";
  const el=document.getElementById("lastDataDate");
  if(el&&lastDate)el.textContent="آخر تحديث: "+lastDate;}
+buildPatientNameMap(RAW);
 populateFilters(RAW);applyFilters();
 ["filterVisitType","filterPractitioner","filterBranch","filterPayment","filterDriver"].forEach(id=>{
   document.getElementById(id).addEventListener("change",applyFilters);
