@@ -430,6 +430,18 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <span style="font-size:1rem">🏠</span>
   <span>البيانات في هذا القسم تشمل <strong style="color:#38bdf8">الزيارات المنزلية فقط</strong> ولا تتضمن بيانات المباريات.</span>
 </div>
+<div class="kpi-grid">
+  <div class="kpi-card kpi-blue"><div class="kpi-label">إجمالي الزيارات</div><div class="kpi-value" id="kpiVsTotalVisits">0</div></div>
+  <div class="kpi-card kpi-green"><div class="kpi-label">إجمالي الإيرادات</div><div class="kpi-value" id="kpiVsTotalRev">0</div></div>
+  <div class="kpi-card kpi-orange"><div class="kpi-label">متوسط الإيراد/زيارة</div><div class="kpi-value" id="kpiVsAvgRev">0</div></div>
+  <div class="kpi-card kpi-purple"><div class="kpi-label">أكثر نوع زيارة</div><div class="kpi-value" id="kpiVsTopType" style="font-size:0.9rem">—</div><div class="kpi-sub" id="kpiVsTopTypeSub"></div></div>
+  <div class="kpi-card kpi-pink"><div class="kpi-label">أنشط فرع</div><div class="kpi-value" id="kpiVsTopBranch" style="font-size:0.9rem">—</div><div class="kpi-sub" id="kpiVsTopBranchSub"></div></div>
+  <div class="kpi-card kpi-yellow"><div class="kpi-label">معدل الزيارات اليومي</div><div class="kpi-value" id="kpiVsDailyRate">0</div><div class="kpi-sub" id="kpiVsDailyRateSub"></div></div>
+  <div class="kpi-card kpi-blue"><div class="kpi-label">ساعة الذروة</div><div class="kpi-value" id="kpiVsPeakHour">—</div><div class="kpi-sub" id="kpiVsPeakHourSub"></div></div>
+  <div class="kpi-card kpi-green"><div class="kpi-label">عدد المرضى الفريدين</div><div class="kpi-value" id="kpiVsUniqPatients">0</div><div class="kpi-sub" id="kpiVsUniqPatientsSub"></div></div>
+  <div class="kpi-card kpi-orange"><div class="kpi-label">أكثر ممارس دخلاً</div><div class="kpi-value" id="kpiVsTopPractRev" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsTopPractRevSub"></div></div>
+  <div class="kpi-card kpi-purple"><div class="kpi-label">أكثر ممارس زيارات</div><div class="kpi-value" id="kpiVsTopPractVis" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsTopPractVisSub"></div></div>
+</div>
 <div class="table-card">
   <h3>أداء الفروع</h3>
   <table><thead><tr><th>الفرع</th><th>الزيارات</th><th>الإيرادات</th><th>المتوسط</th><th>الممارسون</th><th>% من الإجمالي</th><th>التوزيع</th></tr></thead>
@@ -1001,6 +1013,44 @@ function render(){
   const totRm=rev(med);
 
 
+  /* ── Medical Visits Section — KPI Cards ── */
+  {
+    // إجمالي الزيارات والإيرادات
+    const _totV=med.length, _totR=rev(med);
+    const _bill=med.filter(d=>d.visit_type!=="العلاقات/التسويق");
+    document.getElementById("kpiVsTotalVisits").textContent=fmt(_totV);
+    document.getElementById("kpiVsTotalRev").textContent=fmtC(_totR);
+    document.getElementById("kpiVsAvgRev").textContent=fmtC(_bill.length?rev(_bill)/_bill.length:0);
+    // أكثر نوع زيارة
+    const _vtG=grp(med,"visit_type");
+    const _vtTop=Object.entries(_vtG).sort((a,b)=>b[1].length-a[1].length)[0];
+    if(_vtTop){document.getElementById("kpiVsTopType").textContent=_vtTop[0];document.getElementById("kpiVsTopTypeSub").textContent=fmt(_vtTop[1].length)+" زيارة ("+(_totV?(_vtTop[1].length/_totV*100).toFixed(0):0)+"%)";}
+    // أنشط فرع
+    const _brG={};med.forEach(d=>{if(d.branch&&d.branch!=="-"){_brG[d.branch]=(_brG[d.branch]||0)+1;}});
+    const _brTop=Object.entries(_brG).sort((a,b)=>b[1]-a[1])[0];
+    if(_brTop){document.getElementById("kpiVsTopBranch").textContent=_brTop[0].replace("عادل كير ","ع.ك ").replace("بلوديم ","ب.");document.getElementById("kpiVsTopBranchSub").textContent=fmt(_brTop[1])+" زيارة ("+(_totV?(_brTop[1]/_totV*100).toFixed(0):0)+"%)";}
+    // معدل يومي
+    const _dates=new Set(med.filter(d=>d.date).map(d=>d.date));
+    const _actDays=_dates.size;
+    document.getElementById("kpiVsDailyRate").textContent=(_actDays?_totV/_actDays:0).toFixed(1);
+    document.getElementById("kpiVsDailyRateSub").textContent="في "+fmt(_actDays)+" يوم نشط";
+    // ساعة الذروة
+    const _hC={};
+    med.forEach(d=>{if(d.exit_time&&typeof d.exit_time==="string"){const hm=d.exit_time.match(/(\d{1,2}):/);if(hm){const h=parseInt(hm[1]);_hC[h]=(_hC[h]||0)+1;}}});
+    const _hTop=Object.entries(_hC).sort((a,b)=>b[1]-a[1])[0];
+    if(_hTop){const h=parseInt(_hTop[0]);const ampm=h>=12?(h>12?(h-12)+" مساءً":h+" ظهراً"):(h===0?"12 صباحاً":h+" صباحاً");document.getElementById("kpiVsPeakHour").textContent=ampm;document.getElementById("kpiVsPeakHourSub").textContent=fmt(_hTop[1])+" زيارة";}
+    // مرضى فريدين
+    const _pts=new Set(med.filter(d=>d.patient&&d.patient!=="-").map(d=>d.patient));
+    const _repeat=[...new Set(med.filter(d=>d.patient&&d.patient!=="-").map(d=>d.patient))].filter(p=>med.filter(d=>d.patient===p).length>=2).length;
+    document.getElementById("kpiVsUniqPatients").textContent=fmt(_pts.size);
+    document.getElementById("kpiVsUniqPatientsSub").textContent=fmt(_repeat)+" متكرر";
+    // أكثر ممارس دخلاً
+    const _prG={};med.forEach(d=>{if(d.practitioner&&d.practitioner!=="-"){if(!_prG[d.practitioner])_prG[d.practitioner]={v:0,r:0};_prG[d.practitioner].v++;_prG[d.practitioner].r+=(d.amount||0);}});
+    const _prByRev=Object.entries(_prG).sort((a,b)=>b[1].r-a[1].r)[0];
+    const _prByVis=Object.entries(_prG).sort((a,b)=>b[1].v-a[1].v)[0];
+    if(_prByRev){document.getElementById("kpiVsTopPractRev").textContent=_prByRev[0];document.getElementById("kpiVsTopPractRevSub").textContent=fmtC(_prByRev[1].r)+" ر.س";}
+    if(_prByVis){document.getElementById("kpiVsTopPractVis").textContent=_prByVis[0];document.getElementById("kpiVsTopPractVisSub").textContent=fmt(_prByVis[1].v)+" زيارة";}
+  }
   /* ── Medical Visits Section ── */
   const vtG=grp(med,"visit_type");
   const vtGL=Object.keys(vtG).sort((a,b)=>vtG[b].length-vtG[a].length);
