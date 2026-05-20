@@ -453,7 +453,6 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <table><thead><tr><th>نوع الزيارة</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th><th>% زيارات</th><th>% إيرادات</th></tr></thead>
   <tbody id="visitTypeBody"></tbody></table>
 </div>
-<div id="similarNamesWrap" class="alerts-wrap"></div>
 <div id="visitsAlertsWrap" class="alerts-wrap"></div>
 <div class="summary-card">
   <h4>الملخص التلقائي</h4>
@@ -1130,32 +1129,6 @@ function render(){
     const _prByVis=Object.entries(_prG).sort((a,b)=>b[1].v-a[1].v)[0];
     if(_prByRev){document.getElementById("kpiVsTopPractRev").textContent=_prByRev[0];document.getElementById("kpiVsTopPractRevSub").textContent=fmtC(_prByRev[1].r)+" ر.س";}
     if(_prByVis){document.getElementById("kpiVsTopPractVis").textContent=_prByVis[0];document.getElementById("kpiVsTopPractVisSub").textContent=fmt(_prByVis[1].v)+" زيارة";}
-    // تنبيه الأسماء المتشابهة (زيارات منزلية فقط — بدون مباريات)
-    const _snWrap=document.getElementById("similarNamesWrap");
-    const _medPatients=new Set(med.filter(d=>d.patient&&d.patient!=="-"&&d.visit_type!=="العلاقات/التسويق").map(d=>d.patient.trim()));
-    const _medSimilar=_similarNames.filter(g=>g.names.some(n=>_medPatients.has(n))).map(g=>({names:g.names.filter(n=>_medPatients.has(n)),canonical:g.names.filter(n=>_medPatients.has(n)).map(n=>_patientNameMap[n]||n)})).filter(g=>g.names.length>1);
-    if(_snWrap&&_medSimilar.length>0){
-      const merged=_medSimilar.filter(g=>{const u=new Set(g.canonical);return u.size<g.names.length;});
-      const ambiguous=_medSimilar.filter(g=>{const u=new Set(g.canonical);return u.size>=g.names.length;});
-      let html="";
-      if(merged.length>0){
-        html+=`<div class="alert-card" style="border-color:#34d399;background:rgba(52,211,153,0.07);"><strong style="color:#34d399;">✅ تم دمج ${merged.length} مجموعة أسماء متشابهة تلقائياً</strong><div style="font-size:0.75rem;margin-top:6px;color:var(--text-sub);max-height:150px;overflow-y:auto;">`;
-        merged.forEach(g=>{
-          const canon=[...new Set(g.canonical)][0];
-          const others=g.names.filter(n=>n!==canon);
-          if(others.length)html+=`<div style="margin-bottom:4px;">🔗 <strong>${canon}</strong> ← ${others.join("، ")}</div>`;
-        });
-        html+=`</div></div>`;
-      }
-      if(ambiguous.length>0){
-        html+=`<div class="alert-card" style="border-color:#fbbf24;background:rgba(251,191,36,0.07);"><strong style="color:#fbbf24;">⚠️ ${ambiguous.length} مجموعة أسماء متشابهة تحتاج مراجعة في الإكسل</strong><div style="font-size:0.75rem;margin-top:6px;color:var(--text-sub);max-height:150px;overflow-y:auto;">`;
-        ambiguous.forEach(g=>{
-          html+=`<div style="margin-bottom:4px;">🔍 ${g.names.join(" ≠ ")}</div>`;
-        });
-        html+=`</div></div>`;
-      }
-      _snWrap.innerHTML=html;
-    } else if(_snWrap){_snWrap.innerHTML="";}
   }
   /* ── Medical Visits Section ── */
   const vtG=grp(med,"visit_type");
