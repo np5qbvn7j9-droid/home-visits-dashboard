@@ -1034,9 +1034,25 @@ function render(){
     const _actDays=_dates.size;
     document.getElementById("kpiVsDailyRate").textContent=(_actDays?_totV/_actDays:0).toFixed(1);
     document.getElementById("kpiVsDailyRateSub").textContent="في "+fmt(_actDays)+" يوم نشط";
-    // ساعة الذروة
+    // ساعة الذروة (يدعم: "1:00م", "03:30 م", "10:00ص", 0.458333 Excel serial)
     const _hC={};
-    med.forEach(d=>{if(d.exit_time&&typeof d.exit_time==="string"){const hm=d.exit_time.match(/(\d{1,2}):/);if(hm){const h=parseInt(hm[1]);_hC[h]=(_hC[h]||0)+1;}}});
+    med.forEach(d=>{
+      if(!d.exit_time)return;
+      let h=-1;
+      if(typeof d.exit_time==="number"){
+        h=Math.floor(d.exit_time*24);
+      } else {
+        const t=String(d.exit_time).replace(/\s/g,"");
+        const isPM=t.includes("م"),isAM=t.includes("ص");
+        const clean=t.replace("م","").replace("ص","");
+        const parts=clean.split(":");
+        h=parseInt(parts[0]);
+        if(isNaN(h))return;
+        if(isPM&&h!==12)h+=12;
+        if(isAM&&h===12)h=0;
+      }
+      if(h>=0&&h<24)_hC[h]=(_hC[h]||0)+1;
+    });
     const _hTop=Object.entries(_hC).sort((a,b)=>b[1]-a[1])[0];
     if(_hTop){const h=parseInt(_hTop[0]);const ampm=h>=12?(h>12?(h-12)+" مساءً":h+" ظهراً"):(h===0?"12 صباحاً":h+" صباحاً");document.getElementById("kpiVsPeakHour").textContent=ampm;document.getElementById("kpiVsPeakHourSub").textContent=fmt(_hTop[1])+" زيارة";}
     // مرضى فريدين
@@ -1201,14 +1217,19 @@ function render(){
     const hourCounts=Array(24).fill(0);
     med.forEach(d=>{
       if(!d.exit_time)return;
-      const t=d.exit_time.replace(/\s/g,"");
-      const isPM=t.includes("م"), isAM=t.includes("ص");
-      const clean=t.replace("م","").replace("ص","");
-      const parts=clean.split(":");
-      let h=parseInt(parts[0]);
-      if(isNaN(h))return;
-      if(isPM&&h!==12)h+=12;
-      if(isAM&&h===12)h=0;
+      let h=-1;
+      if(typeof d.exit_time==="number"){
+        h=Math.floor(d.exit_time*24);
+      } else {
+        const t=String(d.exit_time).replace(/\s/g,"");
+        const isPM=t.includes("م"), isAM=t.includes("ص");
+        const clean=t.replace("م","").replace("ص","");
+        const parts=clean.split(":");
+        h=parseInt(parts[0]);
+        if(isNaN(h))return;
+        if(isPM&&h!==12)h+=12;
+        if(isAM&&h===12)h=0;
+      }
       if(h>=0&&h<24)hourCounts[h]++;
     });
     const labels=Array.from({length:24},(_,i)=>i===0?"12ص":i<12?i+"ص":i===12?"12م":(i-12)+"م");
