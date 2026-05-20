@@ -442,6 +442,11 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <div class="kpi-card kpi-orange"><div class="kpi-label">أكثر ممارس دخلاً</div><div class="kpi-value" id="kpiVsTopPractRev" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsTopPractRevSub"></div></div>
   <div class="kpi-card kpi-purple"><div class="kpi-label">أكثر ممارس زيارات</div><div class="kpi-value" id="kpiVsTopPractVis" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsTopPractVisSub"></div></div>
 </div>
+<div id="visitsAlertsWrap" class="alerts-wrap"></div>
+<div class="summary-card">
+  <h4>الملخص التلقائي</h4>
+  <div class="summary-text" id="visitsSummary">جاري التحليل...</div>
+</div>
 <div class="table-card">
   <h3>أداء الفروع</h3>
   <table><thead><tr><th>الفرع</th><th>الزيارات</th><th>الإيرادات</th><th>المتوسط</th><th>الممارسون</th><th>% من الإجمالي</th><th>التوزيع</th></tr></thead>
@@ -452,11 +457,6 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <h3>تفاصيل أنواع الزيارات</h3>
   <table><thead><tr><th>نوع الزيارة</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th><th>% زيارات</th><th>% إيرادات</th></tr></thead>
   <tbody id="visitTypeBody"></tbody></table>
-</div>
-<div id="visitsAlertsWrap" class="alerts-wrap"></div>
-<div class="summary-card">
-  <h4>الملخص التلقائي</h4>
-  <div class="summary-text" id="visitsSummary">جاري التحليل...</div>
 </div>
 <div class="charts-grid">
   <div class="chart-card"><h3>توزيع أنواع الزيارات</h3><canvas id="chartVisitType"></canvas></div>
