@@ -269,7 +269,7 @@ const palette=['#3b82f6','#22c55e','#f97316','#a855f7','#ef4444','#eab308','#06b
 // ===== TAB NAVIGATION =====
 const navItems=document.querySelectorAll('.nav-item');
 const tabContents=document.querySelectorAll('.tab-content');
-let currentTab='overview';
+let currentTab=localStorage.getItem('activeTab')||'overview';
 function switchTab(tab){
   if(tab===currentTab)return;
   navItems.forEach(n=>n.classList.remove('active'));
@@ -277,12 +277,19 @@ function switchTab(tab){
   tabContents.forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
   currentTab=tab;
+  localStorage.setItem('activeTab',tab);
   window.scrollTo(0,0);
   renderTab(tab);
 }
+// restore saved tab on load
+if(currentTab!=='overview'){
+  navItems.forEach(n=>n.classList.remove('active'));
+  document.querySelector('.nav-item[data-tab="'+currentTab+'"]').classList.add('active');
+  tabContents.forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+currentTab).classList.add('active');
+}
 navItems.forEach(item=>{
-  item.addEventListener('click',()=>switchTab(item.dataset.tab));
-  item.addEventListener('touchend',(e)=>{e.preventDefault();switchTab(item.dataset.tab);});
+  item.addEventListener('click',(e)=>{e.stopPropagation();switchTab(item.dataset.tab);});
 });
 
 // ===== THEME =====
@@ -290,6 +297,7 @@ function toggleTheme(){
   document.body.classList.toggle('light');
   document.getElementById('themeBtn').textContent=isDark()?'☀️':'🌙';
   document.querySelector('meta[name="theme-color"]').content=isDark()?'#0f172a':'#f1f5f9';
+  localStorage.setItem('theme',isDark()?'dark':'light');
   renderTab(currentTab);
 }
 
@@ -528,21 +536,46 @@ function renderVisits(){
 
 let practSort='revenue';
 let practSearch='';
-function renderPractitioners(){
-  const el=document.getElementById('tab-practitioners');
+let _practAllEntries=[];
+function buildPractData(){
   const prMap={};
   medNoMatch.filter(d=>d.practitioner&&d.practitioner!=='-').forEach(d=>{
     if(!prMap[d.practitioner])prMap[d.practitioner]={visits:0,revenue:0};
     prMap[d.practitioner].visits++;
     prMap[d.practitioner].revenue+=(d.amount||0);
   });
-  let prEntries=Object.entries(prMap).map(([name,d])=>({name,visits:d.visits,revenue:d.revenue,avg:d.visits?d.revenue/d.visits:0}));
-  if(practSearch){prEntries=prEntries.filter(p=>p.name.includes(practSearch));}
-  if(practSort==='revenue')prEntries.sort((a,b)=>b.revenue-a.revenue);
-  else if(practSort==='visits')prEntries.sort((a,b)=>b.visits-a.visits);
-  else prEntries.sort((a,b)=>b.avg-a.avg);
-
-  const top3=prEntries.slice(0,3);
+  _practAllEntries=Object.entries(prMap).map(([name,d])=>({name,visits:d.visits,revenue:d.revenue,avg:d.visits?d.revenue/d.visits:0}));
+}
+function getSortedPractEntries(){
+  let entries=[..._practAllEntries];
+  if(practSearch){entries=entries.filter(p=>p.name.includes(practSearch));}
+  if(practSort==='revenue')entries.sort((a,b)=>b.revenue-a.revenue);
+  else if(practSort==='visits')entries.sort((a,b)=>b.visits-a.visits);
+  else entries.sort((a,b)=>b.avg-a.avg);
+  return entries;
+}
+function updatePractTable(){
+  const entries=getSortedPractEntries();
+  const tbody=document.getElementById('practTableBody');
+  if(tbody)tbody.innerHTML=entries.map((p,i)=>`<tr><td>${i+1}</td><td style="font-size:11px">${p.name}</td><td>${fmt(p.visits)}</td><td>${fmtCur(Math.round(p.revenue))}</td><td>${fmtCur(Math.round(p.avg))}</td></tr>`).join('');
+  // update sort btn styles
+  document.querySelectorAll('.sort-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.sort===practSort);
+  });
+}
+function onPractSearch(val){
+  practSearch=val;
+  updatePractTable();
+}
+function onPractSort(sort){
+  practSort=sort;
+  updatePractTable();
+}
+function renderPractitioners(){
+  buildPractData();
+  const el=document.getElementById('tab-practitioners');
+  const top3=getSortedPractEntries().slice(0,3);
+  const entries=getSortedPractEntries();
   el.innerHTML=`
     <div class="section-title">🏆 أفضل الممارسين</div>
     ${top3.map((p,i)=>`
@@ -555,16 +588,16 @@ function renderPractitioners(){
       </div>
     `).join('')}
     <div class="section-title">📋 جميع الممارسين</div>
-    <input type="text" class="search-box" placeholder="بحث عن ممارس..." value="${practSearch}" oninput="practSearch=this.value;renderPractitioners();">
+    <input type="text" class="search-box" id="practSearchInput" placeholder="🔍 بحث عن ممارس..." value="${practSearch}" oninput="onPractSearch(this.value)">
     <div class="sort-btns">
-      <div class="sort-btn ${practSort==='revenue'?'active':''}" onclick="practSort='revenue';renderPractitioners();">حسب الدخل</div>
-      <div class="sort-btn ${practSort==='visits'?'active':''}" onclick="practSort='visits';renderPractitioners();">حسب الزيارات</div>
-      <div class="sort-btn ${practSort==='avg'?'active':''}" onclick="practSort='avg';renderPractitioners();">حسب المتوسط</div>
+      <div class="sort-btn ${practSort==='revenue'?'active':''}" data-sort="revenue" onclick="onPractSort('revenue')">حسب الدخل</div>
+      <div class="sort-btn ${practSort==='visits'?'active':''}" data-sort="visits" onclick="onPractSort('visits')">حسب الزيارات</div>
+      <div class="sort-btn ${practSort==='avg'?'active':''}" data-sort="avg" onclick="onPractSort('avg')">حسب المتوسط</div>
     </div>
     <div class="scroll-table-wrap">
       <table class="data-table">
         <thead><tr><th>#</th><th>الممارس</th><th>الزيارات</th><th>الإيرادات</th><th>المتوسط</th></tr></thead>
-        <tbody>${prEntries.map((p,i)=>`<tr><td>${i+1}</td><td style="font-size:11px">${p.name}</td><td>${fmt(p.visits)}</td><td>${fmtCur(Math.round(p.revenue))}</td><td>${fmtCur(Math.round(p.avg))}</td></tr>`).join('')}</tbody>
+        <tbody id="practTableBody">${entries.map((p,i)=>`<tr><td>${i+1}</td><td style="font-size:11px">${p.name}</td><td>${fmt(p.visits)}</td><td>${fmtCur(Math.round(p.revenue))}</td><td>${fmtCur(Math.round(p.avg))}</td></tr>`).join('')}</tbody>
       </table>
     </div>
   `;
@@ -629,8 +662,11 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 
+// ===== THEME RESTORE =====
+if(localStorage.getItem('theme')==='light'){document.body.classList.add('light');document.getElementById('themeBtn').textContent='🌙';document.querySelector('meta[name="theme-color"]').content='#f1f5f9';}
+
 // ===== INIT =====
-renderOverview();
+renderTab(currentTab);
 </script>
 </body>
 </html>
