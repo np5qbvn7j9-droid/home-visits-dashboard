@@ -226,31 +226,32 @@ function renderTab(tab){
 // ==================== OVERVIEW ====================
 function renderOverview(){
   const el=document.getElementById('tab-overview');
-  const totalVisits=med.length;
-  const totalRev=sumAmount(med);
+  const allD=RAW;
+  const totalVisits=allD.length;
+  const totalRev=sumAmount(allD);
   const totalMatches=MATCHES_RAW.length;
   const matchRev=sumAmount(MATCHES_RAW);
-  const practitioners=[...new Set(med.filter(d=>d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner))];
-  const uniquePatients=new Set(med.filter(d=>d.patient&&d.patient!=='-').map(d=>getCanonicalPatient(d.patient)));
+  const practitioners=[...new Set(allD.filter(d=>d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner))];
+  const uniquePatients=new Set(allD.filter(d=>d.patient&&d.patient!=='-').map(d=>getCanonicalPatient(d.patient)));
   const avgRev=medNoMatch.length?sumAmount(medNoMatch)/medNoMatch.length:0;
-  const activeDays=new Set(med.filter(d=>d.date).map(d=>d.date)).size;
+  const activeDays=new Set(allD.filter(d=>d.date).map(d=>d.date)).size;
 
   // MoM delta
   const lastM=allMonths[allMonths.length-1],prevM=allMonths[allMonths.length-2];
   let dVisits='',dRev='',dAvg='',dPract='',dDays='';
   if(prevM){
-    const lV=med.filter(d=>d.date&&d.date.startsWith(lastM)).length;
-    const pV=med.filter(d=>d.date&&d.date.startsWith(prevM)).length;
-    const lR=sumAmount(med.filter(d=>d.date&&d.date.startsWith(lastM)));
-    const pR=sumAmount(med.filter(d=>d.date&&d.date.startsWith(prevM)));
+    const lV=allD.filter(d=>d.date&&d.date.startsWith(lastM)).length;
+    const pV=allD.filter(d=>d.date&&d.date.startsWith(prevM)).length;
+    const lR=sumAmount(allD.filter(d=>d.date&&d.date.startsWith(lastM)));
+    const pR=sumAmount(allD.filter(d=>d.date&&d.date.startsWith(prevM)));
     const lMed=medNoMatch.filter(d=>d.date&&d.date.startsWith(lastM));
     const pMed=medNoMatch.filter(d=>d.date&&d.date.startsWith(prevM));
     const lA=lMed.length?sumAmount(lMed)/lMed.length:0;
     const pA=pMed.length?sumAmount(pMed)/pMed.length:0;
-    const lP=new Set(med.filter(d=>d.date&&d.date.startsWith(lastM)&&d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner)).size;
-    const pP=new Set(med.filter(d=>d.date&&d.date.startsWith(prevM)&&d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner)).size;
-    const lD=new Set(med.filter(d=>d.date&&d.date.startsWith(lastM)).map(d=>d.date)).size;
-    const pD=new Set(med.filter(d=>d.date&&d.date.startsWith(prevM)).map(d=>d.date)).size;
+    const lP=new Set(allD.filter(d=>d.date&&d.date.startsWith(lastM)&&d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner)).size;
+    const pP=new Set(allD.filter(d=>d.date&&d.date.startsWith(prevM)&&d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner)).size;
+    const lD=new Set(allD.filter(d=>d.date&&d.date.startsWith(lastM)).map(d=>d.date)).size;
+    const pD=new Set(allD.filter(d=>d.date&&d.date.startsWith(prevM)).map(d=>d.date)).size;
     function delta(cur,prev){if(!prev)return'<div class="kpi-delta flat">—</div>';const pct=((cur-prev)/prev*100).toFixed(1);if(cur>prev)return`<div class="kpi-delta up">↑ ${pct}%</div>`;if(cur<prev)return`<div class="kpi-delta down">↓ ${Math.abs(pct)}%</div>`;return'<div class="kpi-delta flat">مستقر</div>';}
     dVisits=delta(lV,pV);dRev=delta(lR,pR);dAvg=delta(lA,pA);dPract=delta(lP,pP);dDays=delta(lD,pD);
   }
@@ -275,14 +276,14 @@ function renderOverview(){
   // Summary
   const monthlyData={};
   allMonths.forEach(m=>{monthlyData[m]={v:0,r:0};});
-  med.forEach(d=>{const m=getMonth(d.date);if(monthlyData[m]){monthlyData[m].v++;monthlyData[m].r+=(d.amount||0);}});
+  allD.forEach(d=>{const m=getMonth(d.date);if(monthlyData[m]){monthlyData[m].v++;monthlyData[m].r+=(d.amount||0);}});
   const topMonth=allMonths.length?allMonths.reduce((best,m)=>monthlyData[m].r>monthlyData[best].r?m:best,allMonths[0]):'-';
-  const pRevs=Object.entries(grp(med,'practitioner')).filter(([n])=>n!=='-').map(([n,vs])=>({n,r:sumAmount(vs),c:vs.length})).sort((a,b)=>b.r-a.r);
+  const pRevs=Object.entries(grp(allD,'practitioner')).filter(([n])=>n!=='-').map(([n,vs])=>({n,r:sumAmount(vs),c:vs.length})).sort((a,b)=>b.r-a.r);
   const topP=pRevs[0]||{n:'—',r:0,c:0};
-  const brRevs=Object.entries(grp(med,'branch')).map(([n,vs])=>({n,r:sumAmount(vs)})).sort((a,b)=>b.r-a.r);
+  const brRevs=Object.entries(grp(allD,'branch')).map(([n,vs])=>({n,r:sumAmount(vs)})).sort((a,b)=>b.r-a.r);
   const topBr=brRevs[0]||{n:'—',r:0};
   const AR_DAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
-  const dayCnts=Array(7).fill(0);med.forEach(d=>{if(d.date)dayCnts[new Date(d.date).getDay()]++;});
+  const dayCnts=Array(7).fill(0);allD.forEach(d=>{if(d.date)dayCnts[new Date(d.date).getDay()]++;});
   const topDayIdx=dayCnts.indexOf(Math.max(...dayCnts));
   document.getElementById('overviewSummary').innerHTML=`
     تم تسجيل <strong>${fmt(medNoMatch.length)}</strong> زيارة منزلية${totalMatches>0?` و<strong>${fmt(totalMatches)}</strong> مباراة`:''} بإجمالي إيرادات <strong>${fmtCur(Math.round(totalRev+matchRev))}</strong>.<br>
@@ -318,23 +319,24 @@ function renderOverviewAlerts(){
 // ==================== INCOME ====================
 function renderIncome(){
   const el=document.getElementById('tab-income');
-  const totalRev=sumAmount(med);
+  const allD=RAW;
+  const totalRev=sumAmount(allD);
   const matchRev=sumAmount(MATCHES_RAW);
   const medBill=medNoMatch;
-  const monthlyRev={};allMonths.forEach(m=>{monthlyRev[m]=0;});med.forEach(d=>{const m=getMonth(d.date);if(monthlyRev[m]!==undefined)monthlyRev[m]+=(d.amount||0);});
+  const monthlyRev={};allMonths.forEach(m=>{monthlyRev[m]=0;});allD.forEach(d=>{const m=getMonth(d.date);if(monthlyRev[m]!==undefined)monthlyRev[m]+=(d.amount||0);});
 
   // Max day rev
-  const dayRevs={};med.forEach(d=>{if(d.date)dayRevs[d.date]=(dayRevs[d.date]||0)+(d.amount||0);});
+  const dayRevs={};allD.forEach(d=>{if(d.date)dayRevs[d.date]=(dayRevs[d.date]||0)+(d.amount||0);});
   const maxDayEntry=Object.entries(dayRevs).sort((a,b)=>b[1]-a[1])[0];
   const activeDays=Object.keys(dayRevs).length;
   const avgDayRev=activeDays?totalRev/activeDays:0;
 
   // Zero rev
-  const zeroRev=med.filter(d=>d.amount===0).length;
-  const zeroPct=med.length?(zeroRev/med.length*100).toFixed(1):'0';
+  const zeroRev=allD.filter(d=>d.amount===0).length;
+  const zeroPct=allD.length?(zeroRev/allD.length*100).toFixed(1):'0';
 
   // Top branch
-  const brRevs=Object.entries(grp(med,'branch')).map(([n,vs])=>({n,r:sumAmount(vs)})).sort((a,b)=>b.r-a.r);
+  const brRevs=Object.entries(grp(allD,'branch')).map(([n,vs])=>({n,r:sumAmount(vs)})).sort((a,b)=>b.r-a.r);
   const topBr=brRevs[0]||{n:'—',r:0};
 
   // Growth MoM
