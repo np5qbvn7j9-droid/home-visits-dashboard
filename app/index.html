@@ -11,7 +11,6 @@
 <link rel="apple-touch-icon" href="icon-192.svg">
 <title>داشبورد الزيارات المنزلية</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#0f172a;--card:#1e293b;--card2:#273548;--text:#e2e8f0;--text2:#94a3b8;
@@ -88,9 +87,7 @@ body{
 .section-title.purple{color:#a855f7;border-color:#a855f7;}
 .section-title.rose{color:#f472b6;border-color:#f472b6;}
 .section-title.teal{color:#2dd4bf;border-color:#2dd4bf;}
-.chart-container{background:var(--card);border-radius:var(--radius);padding:12px;margin-bottom:14px;box-shadow:var(--shadow);position:relative;min-height:220px;}
-.chart-container canvas{max-height:280px;}
-.chart-container h4{font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600;}
+
 .scroll-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);}
 .data-table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap;}
 .data-table th{background:var(--card2);padding:8px 10px;text-align:right;font-weight:700;color:var(--accent2);position:sticky;top:0;z-index:1;}
@@ -200,14 +197,7 @@ function _reprocessData(){
 }
 _reprocessData();
 
-const chartInstances={};
-function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}}
 function isDark(){return !document.body.classList.contains('light');}
-function chartColors(){
-  const d=isDark();
-  return {text:d?'#94a3b8':'#475569',grid:d?'rgba(148,163,184,0.1)':'rgba(71,85,105,0.1)',bg:d?'rgba(59,130,246,0.15)':'rgba(59,130,246,0.1)'};
-}
-function mkChart(id,type,data,opts){destroyChart(id);const el=document.getElementById(id);if(!el)return;chartInstances[id]=new Chart(el,{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});}
 
 let currentTab=localStorage.getItem('activeTab')||'overview';
 
@@ -277,8 +267,6 @@ function renderOverview(){
     <div id="overviewAlerts" class="alerts-wrap"></div>
     <div class="section-title">📝 الملخص التلقائي</div>
     <div class="summary-box" id="overviewSummary"></div>
-    <div class="section-title">📈 الاتجاه الشهري</div>
-    <div class="chart-container"><canvas id="overviewTrend"></canvas></div>
   `;
 
   // Alerts
@@ -304,14 +292,6 @@ function renderOverview(){
   `;
 
   // Chart
-  const cc=chartColors();
-  mkChart('overviewTrend','line',{
-    labels:allMonths.map(mnName),
-    datasets:[
-      {label:'الزيارات',data:allMonths.map(m=>monthlyData[m].v),borderColor:'#3b82f6',backgroundColor:cc.bg,fill:true,tension:.4,pointRadius:3},
-      {label:'الإيرادات (ألف)',data:allMonths.map(m=>Math.round(monthlyData[m].r/1000)),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.1)',fill:true,tension:.4,pointRadius:3,yAxisID:'y1'}
-    ]
-  },{plugins:{legend:{labels:{color:cc.text,font:{family:'Cairo',size:10}}}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9},maxRotation:45},grid:{color:cc.grid}},y:{position:'right',ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}},y1:{position:'left',ticks:{color:'#22c55e',font:{family:'Cairo',size:9}},grid:{display:false}}}});
 }
 
 function renderOverviewAlerts(){
@@ -388,52 +368,21 @@ function renderIncome(){
       <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-value">${growthTxt}</div><div class="kpi-label">نمو شهري</div><div class="kpi-sub">${growthSub}</div></div>
       <div class="kpi-card"><div class="kpi-icon">🔮</div><div class="kpi-value" style="font-size:14px">${forecast}</div><div class="kpi-label">توقع الشهر القادم</div><div class="kpi-sub">${forecastSub}</div></div>
     </div>
-    <div class="section-title green">📊 الإيرادات حسب نوع الزيارة</div>
-    <div class="chart-container"><canvas id="incRevByType" height="250"></canvas></div>
-    <div class="section-title green">📊 الإيرادات الشهرية</div>
-    <div class="chart-container"><canvas id="incMonthly" height="250"></canvas></div>
-    <div class="section-title green">🏢 الإيرادات حسب الفرع</div>
-    <div class="chart-container"><canvas id="incBranch" height="250"></canvas></div>
-    <div class="section-title green">💳 كاش وتحويل شهرياً</div>
-    <div class="chart-container"><canvas id="incPayMonth" height="250"></canvas></div>
-    <div class="section-title green">📈 الإيراد التراكمي</div>
-    <div class="chart-container"><canvas id="incCumulative" height="250"></canvas></div>
-    <div class="section-title teal">📅 تحليل أيام الأسبوع</div>
-    <div class="chart-container"><h4>الزيارات حسب اليوم</h4><canvas id="dayVisitsChart" height="220"></canvas></div>
-    <div class="chart-container"><h4>الإيرادات حسب اليوم</h4><canvas id="dayRevChart" height="220"></canvas></div>
-    <div class="chart-container"><h4>متوسط المبلغ حسب اليوم</h4><canvas id="dayAvgChart" height="220"></canvas></div>
   `;
-
-  const cc=chartColors();
   // Rev by visit type
-  mkChart('incRevByType','bar',{labels:vtRevEntries.map(e=>e[0]),datasets:[{data:vtRevEntries.map(e=>Math.round(e[1])),backgroundColor:palette.slice(0,vtRevEntries.length),borderRadius:6}]},{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{display:false}}}});
 
   // Monthly bar+line
-  const mRevMatch={};matchMonths.forEach(m=>{mRevMatch[m]=0;});MATCHES_RAW.forEach(d=>{const m=getMonth(d.date);if(mRevMatch[m]!==undefined)mRevMatch[m]+=(d.amount||0);});
-  mkChart('incMonthly','bar',{labels:allMonths.map(mnName),datasets:[{label:'زيارات',data:allMonths.map(m=>Math.round(monthlyRev[m])),backgroundColor:'#3b82f6',borderRadius:6},{label:'مباريات',data:allMonths.map(m=>Math.round(mRevMatch[m]||0)),backgroundColor:'#a855f7',borderRadius:6}]},{plugins:{legend:{labels:{color:cc.text,font:{family:'Cairo',size:10}}}},scales:{x:{stacked:true,ticks:{color:cc.text,font:{family:'Cairo',size:9},maxRotation:45},grid:{display:false}},y:{stacked:true,ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
 
   // Branch doughnut
-  mkChart('incBranch','doughnut',{labels:brEntries.map(e=>e.n),datasets:[{data:brEntries.map(e=>Math.round(e.r)),backgroundColor:palette}]},{plugins:{legend:{position:'bottom',labels:{color:cc.text,font:{family:'Cairo',size:9},padding:6}}}});
 
   // Cash vs transfer monthly
-  const cashMonthly={},transMonthly={};
   allMonths.forEach(m=>{cashMonthly[m]=0;transMonthly[m]=0;});
   med.forEach(d=>{const m=getMonth(d.date);if(!m)return;if(d.payment==='كاش')cashMonthly[m]+=(d.amount||0);else transMonthly[m]+=(d.amount||0);});
-  mkChart('incPayMonth','bar',{labels:allMonths.map(mnName),datasets:[{label:'كاش',data:allMonths.map(m=>Math.round(cashMonthly[m])),backgroundColor:'#22c55e',borderRadius:4},{label:'تحويل',data:allMonths.map(m=>Math.round(transMonthly[m])),backgroundColor:'#3b82f6',borderRadius:4}]},{plugins:{legend:{labels:{color:cc.text,font:{family:'Cairo',size:10}}}},scales:{x:{stacked:true,ticks:{color:cc.text,font:{family:'Cairo',size:9},maxRotation:45},grid:{display:false}},y:{stacked:true,ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
 
   // Cumulative
-  let cum=0;const cumData=allMonths.map(m=>{cum+=(monthlyRev[m]||0);return Math.round(cum);});
-  mkChart('incCumulative','line',{labels:allMonths.map(mnName),datasets:[{label:'التراكمي',data:cumData,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.1)',fill:true,tension:.3,pointRadius:3}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
 
   // Day of week charts
-  const dayNames=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
-  const dayCnts=Array(7).fill(0),dayRevArr=Array(7).fill(0);
-  med.forEach(d=>{if(!d.date)return;const dow=new Date(d.date).getDay();dayCnts[dow]++;dayRevArr[dow]+=(d.amount||0);});
-  const dayAvgs=dayCnts.map((c,i)=>c?Math.round(dayRevArr[i]/c):0);
-  const dayColors=['#818cf8','#a78bfa','#c084fc','#e879f9','#f472b6','#fb7185','#fbbf24'];
-  mkChart('dayVisitsChart','bar',{labels:dayNames,datasets:[{data:dayCnts,backgroundColor:dayColors,borderRadius:6}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
-  mkChart('dayRevChart','bar',{labels:dayNames,datasets:[{data:dayRevArr.map(Math.round),backgroundColor:dayColors,borderRadius:6}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
-  mkChart('dayAvgChart','bar',{labels:dayNames,datasets:[{data:dayAvgs,backgroundColor:dayColors,borderRadius:6}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
+
 }
 
 // ==================== VISITS ====================
@@ -503,15 +452,14 @@ function renderVisits(){
     <div class="scroll-table-wrap"><table class="data-table">
       <thead><tr><th>النوع</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th><th>% زيارات</th><th>% إيرادات</th></tr></thead>
       <tbody>${vtEntries.map(v=>`<tr><td>${v.n}</td><td>${fmt(v.c)}</td><td>${fmtCur(Math.round(v.r))}</td><td>${fmtCur(Math.round(v.avg))}</td><td>${v.vPct.toFixed(1)}%</td><td>${v.rPct.toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>
-    <div class="section-title">📊 توزيع أنواع الزيارات</div>
-    <div class="chart-container"><canvas id="visitTypeChart" height="250"></canvas></div>
-    <div class="section-title">📊 الاتجاه اليومي</div>
-    <div class="chart-container"><canvas id="dailyTrendChart" height="250"></canvas></div>
-    <div class="section-title">🕐 ساعات الذروة</div>
-    <div class="chart-container"><canvas id="peakHourChart" height="250"></canvas></div>
-    <div class="section-title">📊 أنواع الزيارات شهرياً</div>
-    <div class="chart-container"><canvas id="vtMonthChart" height="280"></canvas></div>
     ${momHtml?`<div class="section-title">📊 مقارنة ${mnName(lastM)} بـ${mnName(prevMo)}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">${momHtml}</div>`:''}
+    <div class="section-title">📋 جميع الزيارات</div>
+    <input type="text" class="search-box" id="visitsSearchInput" placeholder="🔍 بحث عن مريض، ممارس، فرع، نوع..." oninput="filterVisitsRows(this.value)">
+    <div id="visitsSearchCount" style="font-size:10px;color:var(--text2);margin-bottom:6px;"></div>
+    <div class="scroll-table-wrap" style="max-height:450px;overflow-y:auto;"><table class="data-table">
+      <thead><tr><th>التاريخ</th><th>النوع</th><th>المريض</th><th>الممارس</th><th>الفرع</th><th>المبلغ</th><th>السداد</th></tr></thead>
+      <tbody id="visitsAllBody">${data.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(d=>`<tr data-vsearch="${[d.date,d.visit_type,d.patient,d.practitioner,d.branch,d.payment,d.driver,d.notes].join(' ').toLowerCase()}"><td>${d.date||'-'}</td><td style="font-size:10px">${d.visit_type||'-'}</td><td style="font-size:10px">${d.patient||'-'}</td><td style="font-size:10px">${d.practitioner||'-'}</td><td style="font-size:10px">${d.branch||'-'}</td><td>${fmtCur(d.amount)}</td><td style="font-size:10px">${d.payment||'-'}</td></tr>`).join('')}</tbody>
+    </table></div>
   `;
 
   // Visits alerts
@@ -527,23 +475,21 @@ function renderVisits(){
     نسبة التحصيل: <strong>${colRate}%</strong> (باستثناء العلاج الطبيعي والعلاقات).
   `;
 
-  const cc=chartColors();
-  mkChart('visitTypeChart','bar',{labels:typeEntries.map(e=>e[0]),datasets:[{data:typeEntries.map(e=>e[1]),backgroundColor:palette.slice(0,typeEntries.length),borderRadius:6}]},{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{display:false}}}});
-
   // Daily trend
-  const dailyMap={};data.forEach(d=>{if(d.date)dailyMap[d.date]=(dailyMap[d.date]||0)+1;});
-  const days=Object.keys(dailyMap).sort();
-  mkChart('dailyTrendChart','line',{labels:days,datasets:[{label:'زيارات',data:days.map(d=>dailyMap[d]),borderColor:'#3b82f6',backgroundColor:cc.bg,fill:true,tension:.3,pointRadius:1}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:8},maxRotation:90,maxTicksLimit:15},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
 
   // Peak hours
   const hours=Array.from({length:24},(_,i)=>i);
   const hourData=hours.map(h=>hourCounts[h]||0);
-  mkChart('peakHourChart','bar',{labels:hours.map(h=>h>12?(h-12)+' م':h===0?'12 ص':h+' ص'),datasets:[{data:hourData,backgroundColor:hours.map(h=>hourCounts[h]===Math.max(...hourData)?'#f97316':'#3b82f6'),borderRadius:4}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:8}},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
 
   // Visit types monthly
-  const vtTypes=[...new Set(medNoMatch.map(d=>d.visit_type))].filter(Boolean);
-  const vtMonthData=vtTypes.map((t,i)=>({label:t,data:allMonths.map(m=>medNoMatch.filter(d=>d.visit_type===t&&d.date&&d.date.startsWith(m)).length),backgroundColor:palette[i%palette.length],borderRadius:3}));
-  mkChart('vtMonthChart','bar',{labels:allMonths.map(mnName),datasets:vtMonthData},{plugins:{legend:{position:'bottom',labels:{color:cc.text,font:{family:'Cairo',size:8},boxWidth:8,padding:4}}},scales:{x:{stacked:true,ticks:{color:cc.text,font:{family:'Cairo',size:8},maxRotation:45},grid:{display:false}},y:{stacked:true,ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
+}
+
+function filterVisitsRows(val){
+  const q=val.trim().toLowerCase();
+  let shown=0,total=0;
+  document.querySelectorAll('#visitsAllBody tr').forEach(r=>{total++;const s=r.dataset.vsearch||'';const show=!q||s.includes(q);r.style.display=show?'':'none';if(show)shown++;});
+  const cnt=document.getElementById('visitsSearchCount');
+  if(cnt)cnt.textContent=q?`عرض ${shown} من ${total}`:'';
 }
 
 function renderVisitsAlerts(data){
@@ -605,12 +551,6 @@ function renderPractitioners(){
   el.innerHTML=`
     <div class="section-title amber">🏆 أفضل الممارسين</div>
     ${top3.map((p,i)=>`<div class="practitioner-card" style="animation:cardIn .4s ease ${i*0.08}s backwards"><div><div class="pc-name">${['🥇','🥈','🥉'][i]} ${p.name}</div><div class="pc-stat">${fmt(p.visits)} زيارة | متوسط ${fmtCur(Math.round(p.avg))}</div></div><div class="pc-revenue">${fmtCur(Math.round(p.revenue))}</div></div>`).join('')}
-    <div class="section-title amber">📊 أعلى 15 ممارس</div>
-    <div class="chart-container"><canvas id="topPractChart" height="350"></canvas></div>
-    <div class="section-title amber">📈 أعلى 5 ممارسين شهرياً</div>
-    <div class="chart-container"><canvas id="top5MonthChart" height="280"></canvas></div>
-    <div class="section-title amber">📊 متوسط الإيراد/زيارة</div>
-    <div class="chart-container"><canvas id="avgPerVisitChart" height="280"></canvas></div>
     <div class="section-title amber">📋 جميع الممارسين</div>
     <input type="text" class="search-box" id="practSearchInput" placeholder="🔍 بحث عن ممارس..." value="${practSearch}" oninput="onPractSearch(this.value)">
     <div class="sort-btns">
@@ -623,28 +563,14 @@ function renderPractitioners(){
       <tbody id="practTableBody">${entries.map((p,i)=>{const badges=['🥇','🥈','🥉'];return `<tr><td style="font-weight:700">${i+1}${badges[i]||''}</td><td style="font-size:10px">${p.name}</td><td>${fmt(p.visits)}</td><td>${fmtCur(Math.round(p.revenue))}</td><td>${fmtCur(Math.round(p.avg))}</td><td>${fmt(p.cash)}</td><td>${fmt(p.tr)}</td><td>${p.pct.toFixed(1)}%</td><td style="font-size:9px">${p.topMonth}</td></tr>`;}).join('')}</tbody>
     </table></div>
   `;
-
-  const cc=chartColors();
   // Top 15 chart
-  mkChart('topPractChart','bar',{
-    labels:top15.map(p=>p.name),
-    datasets:[
-      {label:'الإيرادات',data:top15.map(p=>Math.round(p.revenue)),backgroundColor:'#3b82f6',borderRadius:4},
-      {label:'الزيارات ×100',data:top15.map(p=>p.visits*100),backgroundColor:'rgba(34,197,94,0.5)',borderRadius:4}
-    ]
-  },{indexAxis:'y',plugins:{legend:{labels:{color:cc.text,font:{family:'Cairo',size:9}}}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:8}},grid:{color:cc.grid}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:8}},grid:{display:false}}}});
 
   // Top 5 monthly
-  const top5=_practAllEntries.slice().sort((a,b)=>b.revenue-a.revenue).slice(0,5);
-  const top5data=top5.map((p,i)=>{
     const mData={};medNoMatch.filter(d=>d.practitioner===p.name).forEach(d=>{const m=getMonth(d.date);mData[m]=(mData[m]||0)+(d.amount||0);});
     return {label:p.name,data:allMonths.map(m=>Math.round(mData[m]||0)),borderColor:palette[i],backgroundColor:'transparent',tension:.3,pointRadius:2};
   });
-  mkChart('top5MonthChart','line',{labels:allMonths.map(mnName),datasets:top5data},{plugins:{legend:{position:'bottom',labels:{color:cc.text,font:{family:'Cairo',size:8},boxWidth:8,padding:4}}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:8},maxRotation:45},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:8}},grid:{color:cc.grid}}}});
 
   // Avg per visit
-  const top12=_practAllEntries.slice().sort((a,b)=>b.avg-a.avg).slice(0,12);
-  mkChart('avgPerVisitChart','bar',{labels:top12.map(p=>p.name),datasets:[{data:top12.map(p=>Math.round(p.avg)),backgroundColor:palette.slice(0,12),borderRadius:6}]},{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:8}},grid:{color:cc.grid}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:8}},grid:{display:false}}}});
 }
 
 // ==================== AMBULANCE ====================
@@ -680,17 +606,12 @@ function renderAmbulance(){
     <div class="alerts-wrap">${aAlerts.length?aAlerts.map(a=>`<div class="alert-item ${a.type}"><span class="alert-icon">${a.icon}</span><div class="alert-text">${a.text}</div></div>`).join(''):`<div class="no-alerts">✅ لا توجد تنبيهات</div>`}</div>
     <div class="section-title rose">📝 الملخص</div>
     <div class="summary-box">سُجِّلت <strong>${fmt(totalA)}</strong> رحلة بإجمالي <strong>${fmtCur(Math.round(totalAR))}</strong>. أكثر سائق: <strong>${topDriver[0]}</strong> بـ <strong>${topDriver[1]}</strong> رحلة.</div>
-    <div class="section-title rose">📊 التوزيع الشهري</div>
-    <div class="chart-container"><canvas id="ambMonthChart" height="250"></canvas></div>
     <div class="section-title rose">📋 تفاصيل الرحلات</div>
     <div class="scroll-table-wrap" style="max-height:350px;overflow-y:auto;"><table class="data-table">
       <thead><tr><th>التاريخ</th><th>المريض</th><th>السائق</th><th>الفرع</th><th>المبلغ</th><th>السداد</th></tr></thead>
       <tbody>${sorted.map(d=>`<tr><td>${d.date}</td><td style="font-size:10px">${d.patient}</td><td style="font-size:10px">${d.driver}</td><td style="font-size:10px">${d.branch}</td><td>${fmtCur(d.amount)}</td><td>${d.payment}</td></tr>`).join('')}</tbody>
     </table></div>
   `;
-
-  const cc=chartColors();
-  mkChart('ambMonthChart','bar',{labels:ambMonths.map(mnName),datasets:[{label:'الرحلات',data:mStats.map(s=>s.c),backgroundColor:'#f472b6',borderRadius:5}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
 }
 
 // ==================== MATCHES ====================
@@ -740,10 +661,6 @@ function renderMatches(){
     <div class="alerts-wrap">${mAlerts.length?mAlerts.map(a=>`<div class="alert-item ${a.type}"><span class="alert-icon">${a.icon}</span><div class="alert-text">${a.text}</div></div>`).join(''):`<div class="no-alerts">✅ لا توجد تنبيهات</div>`}</div>
     <div class="section-title purple">📝 الملخص</div>
     <div class="summary-box">سُجِّلت <strong>${fmt(totalM)}</strong> مباراة بإجمالي <strong>${fmtCur(Math.round(totalMRev))}</strong>. أكثر شهر: <strong>${mnName(bestM.m)}</strong> بـ <strong>${bestM.c}</strong> مباراة. أعلى إيرادات: <strong>${mnName(bestRevM.m)}</strong> بـ <strong>${fmtCur(Math.round(bestRevM.r))}</strong>.</div>
-    <div class="section-title purple">📊 التوزيع الشهري</div>
-    <div class="chart-container"><canvas id="matchMonthChart" height="250"></canvas></div>
-    <div class="section-title purple">📊 أيام الأسبوع</div>
-    <div class="chart-container"><canvas id="matchDayChart" height="250"></canvas></div>
     <div class="section-title purple">🏟️ إيرادات الأندية</div>
     <div class="scroll-table-wrap"><table class="data-table">
       <thead><tr><th>#</th><th>النادي</th><th>المباريات</th><th>الإيرادات</th><th>المتوسط</th><th>%</th></tr></thead>
@@ -757,14 +674,6 @@ function renderMatches(){
       <tbody id="matchDetailsBody">${allSorted.map(d=>`<tr data-search="${[d.date,d.club,d.teams,d.category,d.location,d.paramedic,d.driver].join(' ').toLowerCase()}"><td>${d.date}</td><td style="font-size:10px">${d.club||'—'}</td><td style="font-size:10px">${d.teams||'—'}</td><td style="font-size:9px">${d.category||'—'}</td><td style="font-size:9px">${(d.location||'—').substring(0,25)}</td><td style="font-size:9px">${d.paramedic||'—'}</td><td>${fmtCur(d.amount)}</td></tr>`).join('')}</tbody>
     </table></div>
   `;
-
-  const cc=chartColors();
-  mkChart('matchMonthChart','bar',{labels:matchMonths.map(mnName),datasets:[{data:mStats.map(s=>s.c),backgroundColor:'#a855f7',borderRadius:5}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
-
-  const dayNames=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
-  const dayCnts=[0,0,0,0,0,0,0];
-  MATCHES_RAW.forEach(d=>{if(d.date){const dt=new Date(d.date);if(!isNaN(dt))dayCnts[dt.getDay()]++;}});
-  mkChart('matchDayChart','bar',{labels:dayNames,datasets:[{data:dayCnts,backgroundColor:['#818cf8','#a78bfa','#c084fc','#e879f9','#f472b6','#fb7185','#fbbf24'],borderRadius:6}]},{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{display:false}},y:{ticks:{color:cc.text,font:{family:'Cairo',size:9}},grid:{color:cc.grid}}}});
 }
 
 function filterMatchRows(){

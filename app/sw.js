@@ -1,10 +1,9 @@
-const CACHE_NAME = 'home-visits-v2';
+const CACHE_NAME = 'home-visits-v3';
 const ASSETS = [
   './manifest.json',
   './icon-192.svg',
   './icon-512.svg',
-  'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap',
-  'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js'
+  'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap'
 ];
 
 self.addEventListener('install', e => {
