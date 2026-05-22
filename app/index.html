@@ -88,11 +88,18 @@ body{
 .section-title.rose{color:#f472b6;border-color:#f472b6;}
 .section-title.teal{color:#2dd4bf;border-color:#2dd4bf;}
 
-.scroll-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);}
-.data-table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap;}
-.data-table th{background:var(--card2);padding:8px 10px;text-align:right;font-weight:700;color:var(--accent2);position:sticky;top:0;z-index:1;}
-.data-table td{padding:7px 10px;border-bottom:1px solid var(--border);}
-.data-table tr:last-child td{border-bottom:none;}
+.scroll-table-wrap,.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:2px;}
+.scroll-table-wrap table,.table-wrap table,.data-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;}
+.scroll-table-wrap th,.table-wrap th,.data-table th{background:var(--bg);padding:10px 8px;text-align:right;font-weight:700;color:var(--accent);font-size:11px;position:sticky;top:0;z-index:1;white-space:nowrap;border-bottom:2px solid var(--border);}
+.scroll-table-wrap td,.table-wrap td,.data-table td{padding:10px 8px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5;vertical-align:middle;}
+.scroll-table-wrap tr:last-child td,.table-wrap tr:last-child td,.data-table tr:last-child td{border-bottom:none;}
+.scroll-table-wrap tr:nth-child(even) td,.table-wrap tr:nth-child(even) td{background:rgba(255,255,255,0.02);}
+.table-wrap .total-row td{border-top:2px solid var(--accent);font-weight:800;background:rgba(52,211,153,0.06) !important;}
+.td-name{font-weight:700;font-size:12px;white-space:nowrap;}
+.td-num{font-weight:700;font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.td-money{color:var(--green);font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.td-pct{font-size:11px;color:var(--text2);white-space:nowrap;}
+.td-sub{font-size:10px;color:var(--text2);white-space:nowrap;}
 .summary-box{background:var(--card);border-radius:var(--radius);padding:14px;font-size:12px;line-height:1.8;color:var(--text);box-shadow:var(--shadow);margin-bottom:14px;border-right:3px solid var(--accent);}
 .summary-box strong,.summary-box span{color:var(--accent2);font-weight:700;}
 .summary-box .warn{color:#ef4444;}
@@ -422,9 +429,9 @@ function renderIncome(){
     <div class="kpi-card"><div class="kpi-icon">🔮</div><div class="kpi-value">${forecast}</div><div class="kpi-label">توقع الشهر القادم</div><div class="kpi-sub">${forecastSub}</div></div>
   </div>
   <div class="section-title">📅 الإيرادات الشهرية</div>
-  <div class="table-wrap"><table><thead><tr><th>الشهر</th><th>الزيارات</th><th>دخل الزيارات</th><th>المباريات</th><th>دخل المباريات</th><th>الإجمالي</th></tr></thead>
-  <tbody>${mKeys.map((m,i)=>{const d=monthly[m];const prev=i>0?monthly[mKeys[i-1]]:null;const trend=prev&&prev.r>0?((d.r-prev.r)/prev.r*100):null;const arrow=trend!==null?(trend>0?'<span style="color:#34d399">↑'+Math.abs(trend).toFixed(0)+'%</span>':'<span style="color:#f87171">↓'+Math.abs(trend).toFixed(0)+'%</span>'):'';return '<tr><td style="font-weight:700">'+mnName(m)+' '+arrow+'</td><td>'+fmt(d.v-d.mc)+'</td><td>'+fmtCur(d.vr)+'</td><td>'+fmt(d.mc)+'</td><td>'+fmtCur(d.mr)+'</td><td style="font-weight:700">'+fmtCur(d.r)+'</td></tr>';}).join('')}
-  <tr style="font-weight:800;border-top:2px solid var(--border);background:rgba(52,211,153,0.08)"><td>الإجمالي</td><td>${fmt(mKeys.reduce((s,m)=>s+(monthly[m].v-monthly[m].mc),0))}</td><td>${fmtCur(mKeys.reduce((s,m)=>s+monthly[m].vr,0))}</td><td>${fmt(mKeys.reduce((s,m)=>s+monthly[m].mc,0))}</td><td>${fmtCur(mKeys.reduce((s,m)=>s+monthly[m].mr,0))}</td><td style="font-weight:800">${fmtCur(mKeys.reduce((s,m)=>s+monthly[m].r,0))}</td></tr>
+  <div class="table-wrap"><table><thead><tr><th>الشهر</th><th>العدد</th><th>الإيرادات</th><th>التغيير</th></tr></thead>
+  <tbody>${mKeys.map((m,i)=>{const d=monthly[m];const prev=i>0?monthly[mKeys[i-1]]:null;const trend=prev&&prev.r>0?((d.r-prev.r)/prev.r*100):null;const arrow=trend!==null?(trend>0?'<span style="color:#34d399;font-weight:700">↑'+Math.abs(trend).toFixed(0)+'%</span>':'<span style="color:#f87171;font-weight:700">↓'+Math.abs(trend).toFixed(0)+'%</span>'):'<span class="td-sub">—</span>';return '<tr><td class="td-name">'+mnName(m)+'</td><td class="td-num">'+fmt(d.v)+'</td><td class="td-money">'+fmtCur(d.r)+'</td><td>'+arrow+'</td></tr>';}).join('')}
+  <tr class="total-row"><td class="td-name">الإجمالي</td><td class="td-num">${fmt(mKeys.reduce((s,m)=>s+monthly[m].v,0))}</td><td class="td-money">${fmtCur(mKeys.reduce((s,m)=>s+monthly[m].r,0))}</td><td></td></tr>
   </tbody></table></div>`;
 }
 
@@ -469,15 +476,15 @@ function renderVisits(){
   </div>
 
   <div class="section-title">📋 أنواع الزيارات</div>
-  <div class="table-wrap"><table><thead><tr><th>النوع</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th><th>النسبة</th></tr></thead>
-  <tbody>${vtSorted.map(v=>{const isExempt=v.n==='العلاقات/التسويق';const avg=v.cnt?v.r/v.cnt:0;const pct=totalV?(v.cnt/totalV*100).toFixed(1):0;const bar='<div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%;background:var(--accent)"></div></div><span style="font-size:10px;font-weight:600">'+pct+'%</span></div>';return '<tr><td style="font-weight:600">'+v.n+'</td><td style="font-weight:700;color:var(--accent)">'+fmt(v.cnt)+'</td><td style="color:var(--green);font-weight:700">'+fmtCur(v.r)+'</td><td>'+(isExempt?'—':fmtCur(avg))+'</td><td>'+bar+'</td></tr>';}).join('')}
-  <tr style="font-weight:800;border-top:2px solid var(--border);background:rgba(52,211,153,0.08)"><td>الإجمالي</td><td>${fmt(totalV)}</td><td>${fmtCur(totalR)}</td><td>${fmtCur(avgR)}</td><td>100%</td></tr>
+  <div class="table-wrap"><table><thead><tr><th>النوع</th><th>العدد</th><th>الإيرادات</th><th>%</th></tr></thead>
+  <tbody>${vtSorted.map(v=>{const pct=totalV?(v.cnt/totalV*100).toFixed(1):0;return '<tr><td class="td-name">'+v.n+'</td><td class="td-num">'+fmt(v.cnt)+'</td><td class="td-money">'+fmtCur(v.r)+'</td><td class="td-pct">'+pct+'%</td></tr>';}).join('')}
+  <tr class="total-row"><td class="td-name">الإجمالي</td><td class="td-num">${fmt(totalV)}</td><td class="td-money">${fmtCur(totalR)}</td><td class="td-pct">100%</td></tr>
   </tbody></table></div>
 
   <div class="section-title">🏢 الفروع</div>
-  <div class="table-wrap"><table><thead><tr><th>الفرع</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th><th>كاش</th><th>تحويل</th></tr></thead>
-  <tbody>${brSorted.map(b=>{const pct=totalV?(b.cnt/totalV*100).toFixed(1):0;return '<tr><td style="font-weight:600;font-size:10px">'+b.n+'</td><td style="font-weight:700;color:var(--accent)">'+fmt(b.cnt)+'</td><td style="color:var(--green);font-weight:700">'+fmtCur(b.r)+'</td><td>'+fmtCur(b.avg)+'</td><td>'+fmt(b.cash)+'</td><td>'+fmt(b.tr)+'</td></tr>';}).join('')}
-  <tr style="font-weight:800;border-top:2px solid var(--border);background:rgba(52,211,153,0.08)"><td>الإجمالي</td><td>${fmt(totalV)}</td><td>${fmtCur(totalR)}</td><td>—</td><td>${fmt(brSorted.reduce((s,b)=>s+b.cash,0))}</td><td>${fmt(brSorted.reduce((s,b)=>s+b.tr,0))}</td></tr>
+  <div class="table-wrap"><table><thead><tr><th>الفرع</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th></tr></thead>
+  <tbody>${brSorted.map(b=>'<tr><td class="td-name">'+b.n.replace("عادل كير ","ع.ك ").replace("بلوديم ","ب.")+'</td><td class="td-num">'+fmt(b.cnt)+'</td><td class="td-money">'+fmtCur(b.r)+'</td><td class="td-sub">'+fmtCur(b.avg)+'</td></tr>').join('')}
+  <tr class="total-row"><td class="td-name">الإجمالي</td><td class="td-num">${fmt(totalV)}</td><td class="td-money">${fmtCur(totalR)}</td><td></td></tr>
   </tbody></table></div>
 
   <div id="visitsAlertsWrap"></div>
@@ -485,8 +492,8 @@ function renderVisits(){
   <div class="section-title">📋 جميع الزيارات (${fmt(allSorted.length)})</div>
   <input type="text" class="search-box" id="visitsSearchInput" placeholder="🔍 بحث بالاسم، الممارس، النوع..." oninput="filterVisitsRows(this.value)">
   <div id="visitsSearchCount" style="font-size:10px;color:var(--text2);margin:4px 0 8px;text-align:center"></div>
-  <div class="table-wrap" style="max-height:400px;overflow-y:auto;"><table><thead style="position:sticky;top:0;z-index:2"><tr><th>#</th><th>التاريخ</th><th>المريض</th><th>الممارس</th><th>النوع</th><th>المبلغ</th><th>الدفع</th><th>الفرع</th></tr></thead>
-  <tbody id="visitsAllBody">${allSorted.map((d,i)=>'<tr data-vsearch="'+((d.patient||'')+'|'+(d.practitioner||'')+'|'+(d.visit_type||'')+'|'+(d.date||'')+'|'+(d.branch||'')+'|'+(d.notes||'')).toLowerCase()+'"><td style="color:var(--text2);font-size:9px">'+(i+1)+'</td><td style="font-size:10px;white-space:nowrap">'+d.date+'</td><td style="font-size:10px;font-weight:600">'+d.patient+'</td><td style="font-size:9px">'+d.practitioner+'</td><td style="font-size:9px">'+d.visit_type+'</td><td style="font-weight:700;color:var(--green);white-space:nowrap">'+fmtCur(d.amount)+'</td><td style="font-size:9px">'+d.payment+'</td><td style="font-size:8px">'+d.branch+'</td></tr>').join('')}</tbody>
+  <div class="table-wrap" style="max-height:450px;overflow-y:auto;"><table><thead style="position:sticky;top:0;z-index:2;"><tr><th>التاريخ</th><th>المريض</th><th>النوع</th><th>المبلغ</th></tr></thead>
+  <tbody id="visitsAllBody">${allSorted.map((d,i)=>'<tr data-vsearch="'+((d.patient||'')+'|'+(d.practitioner||'')+'|'+(d.visit_type||'')+'|'+(d.date||'')+'|'+(d.branch||'')+'|'+(d.notes||'')).toLowerCase()+'"><td class="td-sub">'+d.date+'</td><td><div class="td-name" style="font-size:11px">'+d.patient+'</div><div class="td-sub">'+d.practitioner+'</div></td><td class="td-sub">'+d.visit_type+'</td><td class="td-money">'+fmtCur(d.amount)+'</td></tr>').join('')}</tbody>
   </table></div>`;
   _fixSearchScroll();
   renderVisitsAlerts(data);
@@ -559,9 +566,9 @@ function renderPractitioners(){
   </div>
 
   <div class="section-title">📊 ترتيب الممارسين</div>
-  <div class="table-wrap"><table><thead><tr><th>#</th><th>الممارس</th><th>الزيارات</th><th>الإيرادات</th><th>المتوسط</th><th>%</th><th>أنشط شهر</th></tr></thead>
-  <tbody>${entries.map((p,i)=>'<tr><td style="font-weight:700">'+((i+1))+(badges[i]||'')+'</td><td style="font-size:10px;font-weight:600">'+p.name+'</td><td style="font-weight:700;color:var(--accent)">'+fmt(p.visits)+'</td><td style="color:var(--green);font-weight:700">'+fmtCur(Math.round(p.revenue))+'</td><td>'+fmtCur(Math.round(p.avg))+'</td><td>'+p.pct.toFixed(1)+'%</td><td style="font-size:9px">'+p.topMonth+'</td></tr>').join('')}
-  <tr style="font-weight:800;border-top:2px solid var(--border);background:rgba(52,211,153,0.08)"><td></td><td>الإجمالي</td><td>${fmt(entries.reduce((s,p)=>s+p.visits,0))}</td><td>${fmtCur(totalR)}</td><td>—</td><td>100%</td><td></td></tr>
+  <div class="table-wrap"><table><thead><tr><th>#</th><th>الممارس</th><th>الزيارات</th><th>الإيرادات</th></tr></thead>
+  <tbody>${entries.map((p,i)=>'<tr><td class="td-num">'+(i+1)+(badges[i]||'')+'</td><td><div class="td-name" style="font-size:11px">'+p.name+'</div><div class="td-sub">'+p.pct.toFixed(1)+'% | متوسط '+fmtCur(Math.round(p.avg))+'</div></td><td class="td-num">'+fmt(p.visits)+'</td><td class="td-money">'+fmtCur(Math.round(p.revenue))+'</td></tr>').join('')}
+  <tr class="total-row"><td></td><td class="td-name">الإجمالي</td><td class="td-num">${fmt(entries.reduce((s,p)=>s+p.visits,0))}</td><td class="td-money">${fmtCur(totalR)}</td></tr>
   </tbody></table></div>
 
   <div class="section-title">🔥 الجدول الحراري (زيارات × أشهر)</div>
@@ -666,24 +673,24 @@ function renderMatches(){
     </div>
     <div class="section-title purple">📋 الملخص الشهري</div>
     <div class="scroll-table-wrap"><table class="data-table">
-      <thead><tr><th>الشهر</th><th>المباريات</th><th>الإيرادات</th><th>المتوسط</th><th>%</th></tr></thead>
-      <tbody>${mStats.map(s=>{const pct=totalMRev?s.r/totalMRev*100:0;return `<tr><td style="font-weight:700;color:#a855f7">${mnName(s.m)}</td><td>${fmt(s.c)}</td><td>${fmtCur(Math.round(s.r))}</td><td>${fmtCur(Math.round(s.c?s.r/s.c:0))}</td><td>${pct.toFixed(1)}%</td></tr>`;}).join('')}
-      <tr style="font-weight:800;background:rgba(168,85,247,0.1);"><td>الإجمالي</td><td>${fmt(totalM)}</td><td>${fmtCur(Math.round(totalMRev))}</td><td>${fmtCur(Math.round(avgM))}</td><td>100%</td></tr>
+      <thead><tr><th>الشهر</th><th>المباريات</th><th>الإيرادات</th><th>المتوسط</th></tr></thead>
+      <tbody>${mStats.map(s=>`<tr><td class="td-name" style="color:#a855f7">${mnName(s.m)}</td><td class="td-num">${fmt(s.c)}</td><td class="td-money">${fmtCur(Math.round(s.r))}</td><td class="td-sub">${fmtCur(Math.round(s.c?s.r/s.c:0))}</td></tr>`).join('')}
+      <tr class="total-row"><td class="td-name">الإجمالي</td><td class="td-num">${fmt(totalM)}</td><td class="td-money">${fmtCur(Math.round(totalMRev))}</td><td class="td-sub">${fmtCur(Math.round(avgM))}</td></tr>
       </tbody></table></div>
     <div class="alerts-wrap">${mAlerts.length?mAlerts.map(a=>`<div class="alert-item ${a.type}"><span class="alert-icon">${a.icon}</span><div class="alert-text">${a.text}</div></div>`).join(''):`<div class="no-alerts">✅ لا توجد تنبيهات</div>`}</div>
     <div class="section-title purple">📝 الملخص</div>
     <div class="summary-box">سُجِّلت <strong>${fmt(totalM)}</strong> مباراة بإجمالي <strong>${fmtCur(Math.round(totalMRev))}</strong>. أكثر شهر: <strong>${mnName(bestM.m)}</strong> بـ <strong>${bestM.c}</strong> مباراة. أعلى إيرادات: <strong>${mnName(bestRevM.m)}</strong> بـ <strong>${fmtCur(Math.round(bestRevM.r))}</strong>.</div>
     <div class="section-title purple">🏟️ إيرادات الأندية</div>
     <div class="scroll-table-wrap"><table class="data-table">
-      <thead><tr><th>#</th><th>النادي</th><th>المباريات</th><th>الإيرادات</th><th>المتوسط</th><th>%</th></tr></thead>
-      <tbody>${clubEntries.map(([n,d],i)=>{const pct=totalMRev?d.r/totalMRev*100:0;return `<tr><td style="font-weight:700">${i+1}${['🥇','🥈','🥉'][i]||''}</td><td>${n}</td><td>${fmt(d.c)}</td><td>${fmtCur(Math.round(d.r))}</td><td>${fmtCur(Math.round(d.c?d.r/d.c:0))}</td><td>${pct.toFixed(1)}%</td></tr>`;}).join('')}</tbody>
+      <thead><tr><th>#</th><th>النادي</th><th>المباريات</th><th>الإيرادات</th></tr></thead>
+      <tbody>${clubEntries.map(([n,d],i)=>`<tr><td class="td-num">${i+1}${['🥇','🥈','🥉'][i]||''}</td><td class="td-name">${n}</td><td class="td-num">${fmt(d.c)}</td><td class="td-money">${fmtCur(Math.round(d.r))}</td></tr>`).join('')}</tbody>
     </table></div>
     <div class="section-title purple">📋 تفاصيل المباريات</div>
     <input type="text" class="search-box" id="matchSearchInput" placeholder="🔍 بحث عن نادي، فريق، موقع..." value="${matchSearchVal}" oninput="matchSearchVal=this.value;filterMatchRows();">
     <div id="matchSearchCount" style="font-size:10px;color:var(--text2);margin-bottom:6px;"></div>
     <div class="scroll-table-wrap" style="max-height:350px;overflow-y:auto;"><table class="data-table">
-      <thead><tr><th>التاريخ</th><th>النادي</th><th>الفريقين</th><th>الفئة</th><th>الموقع</th><th>المسعف</th><th>المبلغ</th></tr></thead>
-      <tbody id="matchDetailsBody">${allSorted.map(d=>`<tr data-search="${[d.date,d.club,d.teams,d.category,d.location,d.paramedic,d.driver].join(' ').toLowerCase()}"><td>${d.date}</td><td style="font-size:10px">${d.club||'—'}</td><td style="font-size:10px">${d.teams||'—'}</td><td style="font-size:9px">${d.category||'—'}</td><td style="font-size:9px">${(d.location||'—').substring(0,25)}</td><td style="font-size:9px">${d.paramedic||'—'}</td><td>${fmtCur(d.amount)}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>التاريخ</th><th>النادي / الفريقين</th><th>المبلغ</th></tr></thead>
+      <tbody id="matchDetailsBody">${allSorted.map(d=>`<tr data-search="${[d.date,d.club,d.teams,d.category,d.location,d.paramedic,d.driver].join(' ').toLowerCase()}"><td class="td-sub">${d.date}</td><td><div class="td-name" style="font-size:11px">${d.club||'—'}</div><div class="td-sub">${d.teams||'—'} · ${d.category||''}</div></td><td class="td-money">${fmtCur(d.amount)}</td></tr>`).join('')}</tbody>
     </table></div>
   `;
 }
