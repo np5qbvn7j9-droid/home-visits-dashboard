@@ -134,6 +134,12 @@ body{
 .bar-fill{height:6px;border-radius:3px;transition:width .3s;}
 .bar-bg{height:6px;border-radius:3px;background:var(--border);flex:1;}
 .bar-wrap{display:flex;align-items:center;gap:6px;}
+.heatmap-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:14px;}
+.heatmap-table{width:100%;border-collapse:collapse;font-size:10px;white-space:nowrap;}
+.heatmap-table th{background:var(--bg);color:var(--text2);padding:5px 4px;text-align:center;font-size:9px;font-weight:600;position:sticky;top:0;z-index:2;}
+.heatmap-table td{padding:4px 3px;text-align:center;border:1px solid var(--bg);font-size:9px;}
+.heatmap-table td:first-child{text-align:right;font-weight:600;color:var(--text);background:var(--bg);position:sticky;right:0;z-index:1;white-space:nowrap;font-size:10px;padding:4px 6px;}
+.search-box{scroll-margin-top:200px;}
 </style>
 </head>
 <body>
@@ -141,6 +147,7 @@ body{
 <div class="header">
   <h1>داشبورد الزيارات</h1>
   <div class="header-actions">
+    <select id="globalMonthFilter" onchange="onGlobalMonthChange(this.value)" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-family:Cairo;font-size:12px;min-width:100px;"></select>
     <div class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀️</div>
   </div>
 </div>
@@ -199,6 +206,23 @@ _reprocessData();
 
 function isDark(){return !document.body.classList.contains('light');}
 
+// Global month filter
+let _globalMonth=localStorage.getItem('globalMonth')||'all';
+function populateMonthFilter(){
+  const sel=document.getElementById('globalMonthFilter');
+  if(!sel)return;
+  sel.innerHTML='<option value="all">كل الأشهر</option>'+allMonths.map(m=>'<option value="'+m+'"'+(m===_globalMonth?' selected':'')+'>'+mnName(m)+'</option>').join('');
+}
+function onGlobalMonthChange(v){
+  _globalMonth=v;
+  localStorage.setItem('globalMonth',v);
+  renderTab(currentTab);
+}
+function filterByMonth(arr){
+  if(_globalMonth==='all')return arr;
+  return arr.filter(d=>d.date&&d.date.startsWith(_globalMonth));
+}
+
 let currentTab=localStorage.getItem('activeTab')||'overview';
 
 function switchTab(tab){
@@ -225,21 +249,24 @@ function renderTab(tab){
 
 // ==================== OVERVIEW ====================
 function renderOverview(){
+  populateMonthFilter();
   const el=document.getElementById('tab-overview');
   // Dashboard logic: med = RAW minus مباراة, homeVisits = med
-  const homeVisCount=med.length;
-  const matchCount=MATCHES_RAW.length;
+  const fMed=filterByMonth(med);
+  const fMatch=filterByMonth(MATCHES_RAW);
+  const homeVisCount=fMed.length;
+  const matchCount=fMatch.length;
   const totalVisits=homeVisCount+matchCount;
-  const medRev=sumAmount(med);
-  const matchRevKpi=sumAmount(MATCHES_RAW);
+  const medRev=sumAmount(fMed);
+  const matchRevKpi=sumAmount(fMatch);
   const totalRev=medRev+matchRevKpi;
-  // Average: med revenue / billable count (med minus العلاقات/التسويق)
-  const medBillCnt=med.filter(d=>d.visit_type!=="العلاقات/التسويق").length;
+  const medBillCnt=fMed.filter(d=>d.visit_type!=="العلاقات/التسويق").length;
   const visAvg=medBillCnt?medRev/medBillCnt:0;
   const matchAvgKpi=matchCount?matchRevKpi/matchCount:0;
-  const practitioners=[...new Set(RAW.filter(d=>d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner))];
-  const activeDays=new Set(RAW.filter(d=>d.date).map(d=>d.date)).size;
-  const totalDays=RAW.length&&RAW[0].date?Math.round((new Date(Math.max(...RAW.filter(d=>d.date).map(d=>new Date(d.date))))-new Date(Math.min(...RAW.filter(d=>d.date).map(d=>new Date(d.date)))))/86400000)+1:0;
+  const fRaw=filterByMonth(RAW);
+  const practitioners=[...new Set(fRaw.filter(d=>d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner))];
+  const activeDays=new Set(fRaw.filter(d=>d.date).map(d=>d.date)).size;
+  const totalDays=fRaw.length?Math.round((new Date(Math.max(...fRaw.filter(d=>d.date).map(d=>new Date(d.date))))-new Date(Math.min(...fRaw.filter(d=>d.date).map(d=>new Date(d.date)))))/86400000)+1:0;
 
   // MoM delta (from unfiltered RAW, like dashboard)
   const lastM=allMonths[allMonths.length-1],prevM=allMonths[allMonths.length-2];
@@ -336,29 +363,28 @@ function renderOverviewSummary(){
 
 // ==================== INCOME ====================
 function renderIncome(){
+  populateMonthFilter();
   const el=document.getElementById('tab-income');
-  // Dashboard: visit income from med, match income from MATCHES_RAW
-  const visitRev=sumAmount(med), visitCnt=med.length;
-  const visitBillable=med.filter(d=>d.visit_type!=="العلاقات/التسويق");
+  const fMed=filterByMonth(med);
+  const fMatch=filterByMonth(MATCHES_RAW);
+  const visitRev=sumAmount(fMed), visitCnt=fMed.length;
+  const visitBillable=fMed.filter(d=>d.visit_type!=="العلاقات/التسويق");
   const visitIncomeAvg=visitBillable.length?visitRev/visitBillable.length:0;
-  const matchRev=sumAmount(MATCHES_RAW);
-  const matchAvgRev=MATCHES_RAW.length?matchRev/MATCHES_RAW.length:0;
+  const matchRev=sumAmount(fMatch);
+  const matchAvgRev=fMatch.length?matchRev/fMatch.length:0;
   const totalRev=visitRev+matchRev;
   // Max day revenue from med
-  const dailyVis={};med.forEach(d=>{if(d.date)dailyVis[d.date]=(dailyVis[d.date]||0)+(d.amount||0);});
+  const dailyVis={};fMed.forEach(d=>{if(d.date)dailyVis[d.date]=(dailyVis[d.date]||0)+(d.amount||0);});
   const maxDayVis=Object.entries(dailyVis).sort((a,b)=>b[1]-a[1])[0]||['',0];
   const uniqueDays=Object.keys(dailyVis).length;
   const AR_DAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
   const maxDayName=maxDayVis[0]?AR_DAYS[new Date(maxDayVis[0]).getDay()]:'';
-  // Average day revenue from med
   const visAvgDay=uniqueDays?visitRev/uniqueDays:0;
-  // Zero revenue: med + matches
-  const zeroRevVis=med.filter(d=>d.amount===0).length;
-  const zeroRevMatch=MATCHES_RAW.filter(d=>!d.amount||d.amount===0).length;
-  // Top branch from med
-  const brG=grp(med,'branch');
+  const zeroRevVis=fMed.filter(d=>d.amount===0).length;
+  const zeroRevMatch=fMatch.filter(d=>!d.amount||d.amount===0).length;
+  const brG=grp(fMed,'branch');
   const topBr=Object.entries(brG).map(([n,v])=>({n,r:sumAmount(v)})).sort((a,b)=>b.r-a.r)[0]||{n:'—',r:0};
-  // Growth: med + matches combined monthly (like dashboard)
+  // Growth: med + matches combined monthly
   const _mG={};
   [...med,...MATCHES_RAW.map(d=>({...d}))].forEach(d=>{if(d.date){const m=getMonth(d.date);if(!_mG[m])_mG[m]=0;_mG[m]+=(d.amount||0);}});
   const _ms=Object.keys(_mG).sort();
@@ -370,7 +396,6 @@ function renderIncome(){
     growthColor=g>=0?'#34d399':'#f87171';
     growthSub=mnName(_ms[_ms.length-1])+' مقارنة بـ '+mnName(_ms[_ms.length-2]);
   }
-  // Forecast: avg last 3 months
   let forecast='—',forecastSub='';
   if(_ms.length>=2){
     const last3=_ms.slice(-3).map(m=>_mG[m]);
@@ -380,136 +405,94 @@ function renderIncome(){
   }
   // Monthly table (med + matches combined)
   const monthly={};
-  med.forEach(d=>{if(!d.date)return;const m=getMonth(d.date);if(!monthly[m])monthly[m]={v:0,r:0};monthly[m].v++;monthly[m].r+=(d.amount||0);});
-  MATCHES_RAW.forEach(d=>{if(!d.date)return;const m=getMonth(d.date);if(!monthly[m])monthly[m]={v:0,r:0};monthly[m].v++;monthly[m].r+=(d.amount||0);});
+  med.forEach(d=>{if(!d.date)return;const m=getMonth(d.date);if(!monthly[m])monthly[m]={v:0,r:0,vr:0,mr:0,mc:0};monthly[m].v++;monthly[m].r+=(d.amount||0);monthly[m].vr+=(d.amount||0);});
+  MATCHES_RAW.forEach(d=>{if(!d.date)return;const m=getMonth(d.date);if(!monthly[m])monthly[m]={v:0,r:0,vr:0,mr:0,mc:0};monthly[m].v++;monthly[m].r+=(d.amount||0);monthly[m].mr+=(d.amount||0);monthly[m].mc++;});
   const mKeys=Object.keys(monthly).sort();
-  const maxMR=Math.max(...mKeys.map(m=>monthly[m].r),1);
-  // Payment breakdown
-  const cashRev=sumAmount(med.filter(d=>d.payment==='كاش'));
-  const transferRev=sumAmount(med.filter(d=>d.payment==='تحويل'));
 
   el.innerHTML=`
   <div class="section-title">💰 الدخل والإيرادات</div>
   <div class="kpi-grid">
     <div class="kpi-card"><div class="kpi-icon">🏠</div><div class="kpi-value">${fmtCur(visitRev)}</div><div class="kpi-label">دخل الزيارات</div><div class="kpi-sub">${fmt(visitCnt)} زيارة | متوسط ${fmtCur(visitIncomeAvg)}</div></div>
-    <div class="kpi-card"><div class="kpi-icon">⚽</div><div class="kpi-value">${fmtCur(matchRev)}</div><div class="kpi-label">دخل المباريات</div><div class="kpi-sub">${fmt(MATCHES_RAW.length)} مباراة | متوسط ${fmtCur(matchAvgRev)}</div></div>
+    <div class="kpi-card"><div class="kpi-icon">⚽</div><div class="kpi-value">${fmtCur(matchRev)}</div><div class="kpi-label">دخل المباريات</div><div class="kpi-sub">${fmt(fMatch.length)} مباراة | متوسط ${fmtCur(matchAvgRev)}</div></div>
     <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-value">${fmtCur(maxDayVis[1])}</div><div class="kpi-label">أعلى إيراد يوم</div><div class="kpi-sub">${maxDayName} ${maxDayVis[0]}</div></div>
-    <div class="kpi-card"><div class="kpi-icon">📊</div><div class="kpi-value">${fmtCur(visAvgDay)}</div><div class="kpi-label">متوسط إيرادات يومية</div><div class="kpi-sub">🏠 زيارات: ${fmtCur(visAvgDay)} ر.س/يوم</div></div>
-    <div class="kpi-card"><div class="kpi-icon">🚫</div><div class="kpi-value">${fmt(zeroRevVis+zeroRevMatch)}</div><div class="kpi-label">زيارات بدون إيراد</div><div class="kpi-sub">زيارات: ${fmt(zeroRevVis)} | مباريات: ${fmt(zeroRevMatch)}</div></div>
-    <div class="kpi-card"><div class="kpi-icon">🏢</div><div class="kpi-value">${topBr.n.replace('عادل كير ','').replace('بلوديم ','')}</div><div class="kpi-label">أعلى فرع إيرادات</div><div class="kpi-sub">${fmtCur(topBr.r)}</div></div>
+    <div class="kpi-card"><div class="kpi-icon">📊</div><div class="kpi-value">${fmtCur(visAvgDay)}</div><div class="kpi-label">متوسط إيرادات يومية</div></div>
+    <div class="kpi-card"><div class="kpi-icon">🚫</div><div class="kpi-value">${fmt(zeroRevVis+zeroRevMatch)}</div><div class="kpi-label">بدون إيراد</div><div class="kpi-sub">زيارات: ${fmt(zeroRevVis)} | مباريات: ${fmt(zeroRevMatch)}</div></div>
+    <div class="kpi-card"><div class="kpi-icon">🏢</div><div class="kpi-value">${topBr.n.replace('عادل كير ','').replace('بلوديم ','')}</div><div class="kpi-label">أعلى فرع</div><div class="kpi-sub">${fmtCur(topBr.r)}</div></div>
     <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-value" style="color:${growthColor}">${growthPct}</div><div class="kpi-label">نمو الإيرادات</div><div class="kpi-sub">${growthSub}</div></div>
     <div class="kpi-card"><div class="kpi-icon">🔮</div><div class="kpi-value">${forecast}</div><div class="kpi-label">توقع الشهر القادم</div><div class="kpi-sub">${forecastSub}</div></div>
   </div>
-  <div class="section-title">💳 طرق الدفع</div>
-  <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-icon">💵</div><div class="kpi-value">${fmtCur(cashRev)}</div><div class="kpi-label">كاش</div><div class="kpi-sub">${totalRev?(cashRev/visitRev*100).toFixed(1):'0'}%</div></div>
-    <div class="kpi-card"><div class="kpi-icon">🏦</div><div class="kpi-value">${fmtCur(transferRev)}</div><div class="kpi-label">تحويل</div><div class="kpi-sub">${totalRev?(transferRev/visitRev*100).toFixed(1):'0'}%</div></div>
-  </div>
   <div class="section-title">📅 الإيرادات الشهرية</div>
-  <div class="table-wrap"><table><thead><tr><th>الشهر</th><th>الزيارات</th><th>الإيرادات</th><th>المتوسط</th></tr></thead>
-  <tbody>${mKeys.map(m=>{const d=monthly[m];const avg=d.v?d.r/d.v:0;const pct=maxMR?d.r/maxMR*100:0;return '<tr><td>'+mnName(m)+'</td><td>'+fmt(d.v)+'</td><td>'+fmtCur(d.r)+'</td><td>'+fmtCur(avg)+'</td></tr>';}).join('')}
-  <tr style="font-weight:800;border-top:2px solid var(--border)"><td>الإجمالي</td><td>${fmt(mKeys.reduce((s,m)=>s+monthly[m].v,0))}</td><td>${fmtCur(mKeys.reduce((s,m)=>s+monthly[m].r,0))}</td><td>—</td></tr>
-  </tbody></table></div>
-  <div id="incomeAlertsWrap"></div>`;
-  renderIncomeAlerts();
-}
-function renderIncomeAlerts(){
-  const alerts=[];
-  const oLast=allMonths[allMonths.length-1],oPrev=allMonths[allMonths.length-2];
-  if(oPrev){
-    const lR=sumAmount(med.filter(d=>d.date&&d.date.startsWith(oLast)));
-    const pR=sumAmount(med.filter(d=>d.date&&d.date.startsWith(oPrev)));
-    if(pR>0){const pct=((lR-pR)/pR*100).toFixed(1);
-      if(parseFloat(pct)<-20) alerts.push({t:'red',i:'📉',tx:'إيرادات '+mnName(oLast)+' انخفضت '+Math.abs(pct)+'% مقارنة بـ'+mnName(oPrev)});
-    }
-  }
-  const wrap=document.getElementById('incomeAlertsWrap');
-  if(wrap&&alerts.length) wrap.innerHTML='<div class="section-title" style="margin-top:16px">⚠️ تنبيهات الدخل</div>'+alerts.map(a=>'<div class="alert-card '+a.t+'"><span>'+a.i+'</span><div>'+a.tx+'</div></div>').join('');
+  <div class="table-wrap"><table><thead><tr><th>الشهر</th><th>الزيارات</th><th>دخل الزيارات</th><th>المباريات</th><th>دخل المباريات</th><th>الإجمالي</th></tr></thead>
+  <tbody>${mKeys.map((m,i)=>{const d=monthly[m];const prev=i>0?monthly[mKeys[i-1]]:null;const trend=prev&&prev.r>0?((d.r-prev.r)/prev.r*100):null;const arrow=trend!==null?(trend>0?'<span style="color:#34d399">↑'+Math.abs(trend).toFixed(0)+'%</span>':'<span style="color:#f87171">↓'+Math.abs(trend).toFixed(0)+'%</span>'):'';return '<tr><td style="font-weight:700">'+mnName(m)+' '+arrow+'</td><td>'+fmt(d.v-d.mc)+'</td><td>'+fmtCur(d.vr)+'</td><td>'+fmt(d.mc)+'</td><td>'+fmtCur(d.mr)+'</td><td style="font-weight:700">'+fmtCur(d.r)+'</td></tr>';}).join('')}
+  <tr style="font-weight:800;border-top:2px solid var(--border);background:rgba(52,211,153,0.08)"><td>الإجمالي</td><td>${fmt(mKeys.reduce((s,m)=>s+(monthly[m].v-monthly[m].mc),0))}</td><td>${fmtCur(mKeys.reduce((s,m)=>s+monthly[m].vr,0))}</td><td>${fmt(mKeys.reduce((s,m)=>s+monthly[m].mc,0))}</td><td>${fmtCur(mKeys.reduce((s,m)=>s+monthly[m].mr,0))}</td><td style="font-weight:800">${fmtCur(mKeys.reduce((s,m)=>s+monthly[m].r,0))}</td></tr>
+  </tbody></table></div>`;
 }
 
 // ==================== VISITS ====================
 function renderVisits(){
+  populateMonthFilter();
   const el=document.getElementById('tab-visits');
-  // Month selector
-  const months=allMonths.slice();
-  let visitsMonth=localStorage.getItem('visitsMonth')||'all';
-  // Dashboard uses med (RAW minus مباراة) for visits section
-  const data=visitsMonth==='all'?med:med.filter(d=>getMonth(d.date)===visitsMonth);
+  const data=filterByMonth(med);
   const totalV=data.length, totalR=sumAmount(data);
-  // Average: exclude العلاقات/التسويق from count (like dashboard)
   const billAVG=data.filter(d=>d.visit_type!=="العلاقات/التسويق");
   const avgR=billAVG.length?sumAmount(billAVG)/billAVG.length:0;
-  // Top visit type
   const vtG=grp(data,'visit_type');
-  const vtTop=Object.entries(vtG).filter(([k])=>k&&k!=='-'&&k.trim()!=='').sort((a,b)=>b[1].length-a[1].length)[0];
-  // Top branch
-  const brMap={};data.forEach(d=>{if(d.branch&&d.branch!=='-'){brMap[d.branch]=(brMap[d.branch]||0)+1;}});
+  const vtTop=Object.entries(vtG).filter(([k])=>k&&k!=='-').sort((a,b)=>b[1].length-a[1].length)[0];
+  const brMap={};data.forEach(d=>{if(d.branch&&d.branch!=='-')brMap[d.branch]=(brMap[d.branch]||0)+1;});
   const brTop=Object.entries(brMap).sort((a,b)=>b[1]-a[1])[0];
-  // Daily rate
   const uniqueDays=new Set(data.filter(d=>d.date).map(d=>d.date)).size;
   const dailyRate=uniqueDays?(totalV/uniqueDays).toFixed(1):0;
-  // Peak hour (with Excel serial support)
-  const hC={};
-  data.forEach(d=>{const h=parseHour(d.exit_time);if(h>=0&&h<24)hC[h]=(hC[h]||0)+1;});
+  const hC={};data.forEach(d=>{const h=parseHour(d.exit_time);if(h>=0&&h<24)hC[h]=(hC[h]||0)+1;});
   const hTop=Object.entries(hC).sort((a,b)=>b[1]-a[1])[0];
   let peakHourStr='—',peakHourSub='';
   if(hTop){const h=parseInt(hTop[0]);peakHourStr=h>=12?(h>12?(h-12)+' مساءً':h+' ظهراً'):(h===0?'12 صباحاً':h+' صباحاً');peakHourSub=fmt(hTop[1])+' زيارة';}
-  // Unique patients (canonical matching)
   const ptsCanon=new Set(data.filter(d=>d.patient&&d.patient!=='-').map(d=>getCanonicalPatient(d.patient)));
   const ptCounts={};data.filter(d=>d.patient&&d.patient!=='-').forEach(d=>{const c=getCanonicalPatient(d.patient);ptCounts[c]=(ptCounts[c]||0)+1;});
   const repeatCanon=Object.values(ptCounts).filter(c=>c>=2).length;
-  // Top practitioner by revenue
-  const prG={};data.forEach(d=>{if(d.practitioner&&d.practitioner!=='-'){if(!prG[d.practitioner])prG[d.practitioner]={v:0,r:0};prG[d.practitioner].v++;prG[d.practitioner].r+=(d.amount||0);}});
-  const prByRev=Object.entries(prG).sort((a,b)=>b[1].r-a[1].r)[0];
-  const prByVis=Object.entries(prG).sort((a,b)=>b[1].v-a[1].v)[0];
   // Visit type table
-  const vtSorted=Object.entries(vtG).map(([n,v])=>({n,cnt:v.length,r:sumAmount(v)})).sort((a,b)=>b.r-a.r);
-  const overallAvg=billAVG.length?sumAmount(billAVG)/billAVG.length:0;
+  const vtSorted=Object.entries(vtG).map(([n,v])=>({n,cnt:v.length,r:sumAmount(v)})).sort((a,b)=>b.cnt-a.cnt);
   // Branch table
   const brG2=grp(data,'branch');
-  const brSorted=Object.entries(brG2).map(([n,v])=>{const billVs=v.filter(d=>d.visit_type!=="العلاقات/التسويق");return{n,cnt:v.length,r:sumAmount(v),avg:billVs.length?sumAmount(v)/billVs.length:0,cash:v.filter(d=>d.payment==='كاش').length,transfer:v.filter(d=>d.payment==='تحويل').length};}).sort((a,b)=>b.r-a.r);
+  const brSorted=Object.entries(brG2).map(([n,v])=>{const bill=v.filter(d=>d.visit_type!=="العلاقات/التسويق");return{n,cnt:v.length,r:sumAmount(v),avg:bill.length?sumAmount(v)/bill.length:0,cash:v.filter(d=>d.payment==='كاش').length,tr:v.filter(d=>d.payment==='تحويل').length};}).sort((a,b)=>b.r-a.r);
+  // All visits sorted
+  const allSorted=data.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
   el.innerHTML=`
   <div class="section-title">🏥 الزيارات الطبية</div>
-  <div style="margin-bottom:12px"><select id="visitsMonthSelect" style="background:var(--bg-card);color:var(--text-main);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-family:Cairo;font-size:13px;width:100%">
-    <option value="all" ${visitsMonth==='all'?'selected':''}>كل الأشهر</option>
-    ${months.map(m=>'<option value="'+m+'" '+(visitsMonth===m?'selected':'')+'>'+mnName(m)+'</option>').join('')}
-  </select></div>
   <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-icon">🏥</div><div class="kpi-value">${fmt(totalV)}</div><div class="kpi-label">إجمالي الزيارات</div></div>
-    <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-value">${fmtCur(totalR)}</div><div class="kpi-label">إجمالي الإيرادات</div></div>
-    <div class="kpi-card"><div class="kpi-icon">📊</div><div class="kpi-value">${fmtCur(avgR)}</div><div class="kpi-label">متوسط المبلغ/زيارة</div></div>
-    <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-value">${vtTop?vtTop[0]:'—'}</div><div class="kpi-label">أكثر نوع زيارة</div><div class="kpi-sub">${vtTop?fmt(vtTop[1].length)+' زيارة ('+(totalV?(vtTop[1].length/totalV*100).toFixed(0):0)+'%)':''}</div></div>
-    <div class="kpi-card"><div class="kpi-icon">🏢</div><div class="kpi-value">${brTop?brTop[0].replace('عادل كير ','ع.ك ').replace('بلوديم ','ب.'):'—'}</div><div class="kpi-label">أنشط فرع</div><div class="kpi-sub">${brTop?fmt(brTop[1])+' زيارة ('+(totalV?(brTop[1]/totalV*100).toFixed(0):0)+'%)':''}</div></div>
-    <div class="kpi-card"><div class="kpi-icon">📅</div><div class="kpi-value">${dailyRate}</div><div class="kpi-label">معدل يومي</div><div class="kpi-sub">في ${fmt(uniqueDays)} يوم نشط</div></div>
+    <div class="kpi-card"><div class="kpi-icon">🏥</div><div class="kpi-value">${fmt(totalV)}</div><div class="kpi-label">الزيارات</div></div>
+    <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-value">${fmtCur(totalR)}</div><div class="kpi-label">الإيرادات</div></div>
+    <div class="kpi-card"><div class="kpi-icon">📊</div><div class="kpi-value">${fmtCur(avgR)}</div><div class="kpi-label">المتوسط</div></div>
+    <div class="kpi-card"><div class="kpi-icon">📅</div><div class="kpi-value">${dailyRate}</div><div class="kpi-label">معدل يومي</div><div class="kpi-sub">${fmt(uniqueDays)} يوم</div></div>
     <div class="kpi-card"><div class="kpi-icon">⏰</div><div class="kpi-value">${peakHourStr}</div><div class="kpi-label">ساعة الذروة</div><div class="kpi-sub">${peakHourSub}</div></div>
-    <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-value">${fmt(ptsCanon.size)}</div><div class="kpi-label">مرضى مستفيدين</div><div class="kpi-sub">${fmt(repeatCanon)} متكرر</div></div>
-    <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-value">${prByRev?prByRev[0]:'—'}</div><div class="kpi-label">أكثر ممارس دخلاً</div><div class="kpi-sub">${prByRev?fmtCur(prByRev[1].r):''}</div></div>
-    <div class="kpi-card"><div class="kpi-icon">🏥</div><div class="kpi-value">${prByVis?prByVis[0]:'—'}</div><div class="kpi-label">أكثر ممارس زيارات</div><div class="kpi-sub">${prByVis?fmt(prByVis[1].v)+' زيارة':''}</div></div>
+    <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-value">${fmt(ptsCanon.size)}</div><div class="kpi-label">المرضى</div><div class="kpi-sub">${fmt(repeatCanon)} متكرر</div></div>
   </div>
+
   <div class="section-title">📋 أنواع الزيارات</div>
-  <div class="table-wrap"><table><thead><tr><th>النوع</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th><th>%</th></tr></thead>
-  <tbody>${vtSorted.map(v=>{const isExempt=v.n==='العلاقات/التسويق';const avg=v.cnt?v.r/v.cnt:0;return '<tr><td>'+v.n+'</td><td>'+fmt(v.cnt)+'</td><td>'+fmtCur(v.r)+'</td><td>'+(isExempt?'—':fmtCur(avg))+'</td><td>'+(totalV?(v.cnt/totalV*100).toFixed(1):0)+'%</td></tr>';}).join('')}
-  <tr style="font-weight:800;border-top:2px solid var(--border)"><td>الإجمالي</td><td>${fmt(totalV)}</td><td>${fmtCur(totalR)}</td><td>${fmtCur(overallAvg)}</td><td>100%</td></tr>
+  <div class="table-wrap"><table><thead><tr><th>النوع</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th><th>النسبة</th></tr></thead>
+  <tbody>${vtSorted.map(v=>{const isExempt=v.n==='العلاقات/التسويق';const avg=v.cnt?v.r/v.cnt:0;const pct=totalV?(v.cnt/totalV*100).toFixed(1):0;const bar='<div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%;background:var(--accent)"></div></div><span style="font-size:10px;font-weight:600">'+pct+'%</span></div>';return '<tr><td style="font-weight:600">'+v.n+'</td><td style="font-weight:700;color:var(--accent)">'+fmt(v.cnt)+'</td><td style="color:var(--green);font-weight:700">'+fmtCur(v.r)+'</td><td>'+(isExempt?'—':fmtCur(avg))+'</td><td>'+bar+'</td></tr>';}).join('')}
+  <tr style="font-weight:800;border-top:2px solid var(--border);background:rgba(52,211,153,0.08)"><td>الإجمالي</td><td>${fmt(totalV)}</td><td>${fmtCur(totalR)}</td><td>${fmtCur(avgR)}</td><td>100%</td></tr>
   </tbody></table></div>
+
   <div class="section-title">🏢 الفروع</div>
   <div class="table-wrap"><table><thead><tr><th>الفرع</th><th>العدد</th><th>الإيرادات</th><th>المتوسط</th><th>كاش</th><th>تحويل</th></tr></thead>
-  <tbody>${brSorted.map(b=>'<tr><td style="font-size:10px">'+b.n+'</td><td>'+fmt(b.cnt)+'</td><td>'+fmtCur(b.r)+'</td><td>'+fmtCur(b.avg)+'</td><td>'+fmt(b.cash)+'</td><td>'+fmt(b.transfer)+'</td></tr>').join('')}
-  <tr style="font-weight:800;border-top:2px solid var(--border)"><td>الإجمالي</td><td>${fmt(totalV)}</td><td>${fmtCur(totalR)}</td><td>—</td><td>${fmt(brSorted.reduce((s,b)=>s+b.cash,0))}</td><td>${fmt(brSorted.reduce((s,b)=>s+b.transfer,0))}</td></tr>
+  <tbody>${brSorted.map(b=>{const pct=totalV?(b.cnt/totalV*100).toFixed(1):0;return '<tr><td style="font-weight:600;font-size:10px">'+b.n+'</td><td style="font-weight:700;color:var(--accent)">'+fmt(b.cnt)+'</td><td style="color:var(--green);font-weight:700">'+fmtCur(b.r)+'</td><td>'+fmtCur(b.avg)+'</td><td>'+fmt(b.cash)+'</td><td>'+fmt(b.tr)+'</td></tr>';}).join('')}
+  <tr style="font-weight:800;border-top:2px solid var(--border);background:rgba(52,211,153,0.08)"><td>الإجمالي</td><td>${fmt(totalV)}</td><td>${fmtCur(totalR)}</td><td>—</td><td>${fmt(brSorted.reduce((s,b)=>s+b.cash,0))}</td><td>${fmt(brSorted.reduce((s,b)=>s+b.tr,0))}</td></tr>
   </tbody></table></div>
+
   <div id="visitsAlertsWrap"></div>
-  <div class="section-title">📋 جميع الزيارات</div>
-  <input type="text" class="search-box" id="visitsSearchInput" placeholder="🔍 بحث..." oninput="filterVisitsRows(this.value)">
-  <div id="visitsSearchCount" style="font-size:11px;color:var(--text-sub);margin:4px 0 8px;text-align:center"></div>
-  <div class="table-wrap"><table><thead><tr><th>#</th><th>التاريخ</th><th>المريض</th><th>الممارس</th><th>النوع</th><th>المبلغ</th><th>الدفع</th></tr></thead>
-  <tbody id="visitsAllBody">${data.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(d=>'<tr data-vsearch="'+((d.patient||'')+'|'+(d.practitioner||'')+'|'+(d.visit_type||'')+'|'+(d.date||'')+'|'+(d.branch||'')+'|'+(d.notes||'')).toLowerCase()+'"><td>'+d.id+'</td><td style="font-size:10px">'+d.date+'</td><td style="font-size:10px">'+d.patient+'</td><td style="font-size:10px">'+d.practitioner+'</td><td style="font-size:10px">'+d.visit_type+'</td><td>'+fmtCur(d.amount)+'</td><td style="font-size:10px">'+d.payment+'</td></tr>').join('')}</tbody>
+
+  <div class="section-title">📋 جميع الزيارات (${fmt(allSorted.length)})</div>
+  <input type="text" class="search-box" id="visitsSearchInput" placeholder="🔍 بحث بالاسم، الممارس، النوع..." oninput="filterVisitsRows(this.value)">
+  <div id="visitsSearchCount" style="font-size:10px;color:var(--text2);margin:4px 0 8px;text-align:center"></div>
+  <div class="table-wrap" style="max-height:400px;overflow-y:auto;"><table><thead style="position:sticky;top:0;z-index:2"><tr><th>#</th><th>التاريخ</th><th>المريض</th><th>الممارس</th><th>النوع</th><th>المبلغ</th><th>الدفع</th><th>الفرع</th></tr></thead>
+  <tbody id="visitsAllBody">${allSorted.map((d,i)=>'<tr data-vsearch="'+((d.patient||'')+'|'+(d.practitioner||'')+'|'+(d.visit_type||'')+'|'+(d.date||'')+'|'+(d.branch||'')+'|'+(d.notes||'')).toLowerCase()+'"><td style="color:var(--text2);font-size:9px">'+(i+1)+'</td><td style="font-size:10px;white-space:nowrap">'+d.date+'</td><td style="font-size:10px;font-weight:600">'+d.patient+'</td><td style="font-size:9px">'+d.practitioner+'</td><td style="font-size:9px">'+d.visit_type+'</td><td style="font-weight:700;color:var(--green);white-space:nowrap">'+fmtCur(d.amount)+'</td><td style="font-size:9px">'+d.payment+'</td><td style="font-size:8px">'+d.branch+'</td></tr>').join('')}</tbody>
   </table></div>`;
-  document.getElementById('visitsMonthSelect').addEventListener('change',function(){localStorage.setItem('visitsMonth',this.value);renderVisits();});
+  _fixSearchScroll();
   renderVisitsAlerts(data);
 }
 function filterVisitsRows(val){
-  const q=val.trim().toLowerCase();
-  let shown=0,total=0;
+  const q=val.trim().toLowerCase();let shown=0,total=0;
   document.querySelectorAll('#visitsAllBody tr').forEach(r=>{total++;const s=r.dataset.vsearch||'';const show=!q||s.includes(q);r.style.display=show?'':'none';if(show)shown++;});
   const cnt=document.getElementById('visitsSearchCount');
   if(cnt)cnt.textContent=q?'عرض '+shown+' من '+total:'';
@@ -524,35 +507,27 @@ function renderVisitsAlerts(data){
     const pct=visits.length?zeroCount/visits.length:0;
     if(pct>=0.6&&visits.length>=3) alerts.push({t:'red',i:'🚨',tx:type+': نسبة التحصيل منخفضة ('+Math.round(pct*100)+'% بدون إيراد)'});
   });
-  // Revenue MoM drop
   const lastM=allMonths[allMonths.length-1],prevM=allMonths[allMonths.length-2];
   if(prevM){
     const lastData=med.filter(d=>d.date&&d.date.startsWith(lastM));
     const prevData=med.filter(d=>d.date&&d.date.startsWith(prevM));
     const lR=sumAmount(lastData),pR=sumAmount(prevData);
     if(pR>0){const pct=((lR-pR)/pR*100);if(pct<-20) alerts.push({t:'yellow',i:'📉',tx:'إيرادات '+mnName(lastM)+' انخفضت '+Math.abs(pct).toFixed(1)+'% مقارنة بـ'+mnName(prevM)});}
-    // Inactive doctors
     const types=['طبيب/ة','اخصائي/ة'];
     const prevDocs=new Set(prevData.filter(d=>types.includes(d.visit_type)&&d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner));
     const lastDocs=new Set(lastData.filter(d=>types.includes(d.visit_type)&&d.practitioner&&d.practitioner!=='-').map(d=>d.practitioner));
     const inactiveDocs=[...prevDocs].filter(p=>!lastDocs.has(p)&&!FORMER_PRACTS.some(fp=>p.includes(fp)));
     if(inactiveDocs.length>0) alerts.push({t:'yellow',i:'👨‍⚕️',tx:inactiveDocs.length+' طبيب/أخصائي لم يسجل زيارات في '+mnName(lastM)});
-    // Branch performance drop
-    const brPrev=grp(prevData,'branch'),brLast=grp(lastData,'branch');
-    Object.entries(brPrev).forEach(([br,v])=>{
-      const pBR=sumAmount(v),lBR=sumAmount(brLast[br]||[]);
-      if(pBR>0){const drop=((lBR-pBR)/pBR*100);if(drop<-25) alerts.push({t:'yellow',i:'🏢',tx:br+' انخفض '+Math.abs(drop).toFixed(0)+'% في '+mnName(lastM)});}
-    });
   }
   const wrap=document.getElementById('visitsAlertsWrap');
-  if(wrap&&alerts.length) wrap.innerHTML='<div class="section-title" style="margin-top:16px">⚠️ تنبيهات الزيارات</div>'+alerts.map(a=>'<div class="alert-card '+a.t+'"><span>'+a.i+'</span><div>'+a.tx+'</div></div>').join('');
+  if(wrap&&alerts.length) wrap.innerHTML='<div class="section-title" style="margin-top:16px">⚠️ تنبيهات</div>'+alerts.map(a=>'<div class="alert-card '+a.t+'"><span>'+a.i+'</span><div>'+a.tx+'</div></div>').join('');
 }
 
 // ==================== PRACTITIONERS ====================
 function renderPractitioners(){
+  populateMonthFilter();
   const el=document.getElementById('tab-practitioners');
-  // Dashboard uses med (RAW minus مباراة)
-  const data=med;
+  const data=filterByMonth(med);
   const totalR=sumAmount(data);
   const entries=[];
   const prG=grp(data,'practitioner');
@@ -561,13 +536,19 @@ function renderPractitioners(){
     const r=sumAmount(visits);
     const cash=visits.filter(d=>d.payment==='كاش').length;
     const tr=visits.filter(d=>d.payment==='تحويل').length;
-    // Top month
     const mG={};visits.forEach(d=>{if(d.date){const m=getMonth(d.date);mG[m]=(mG[m]||0)+1;}});
     const topM=Object.entries(mG).sort((a,b)=>b[1]-a[1])[0];
-    entries.push({name,visits:visits.length,revenue:r,avg:visits.length?r/visits.length:0,cash,tr,pct:totalR?r/totalR*100:0,topMonth:topM?mnName(topM[0])+' ('+topM[1]+')':'—'});
+    const types={};visits.forEach(d=>{if(d.visit_type)types[d.visit_type]=(types[d.visit_type]||0)+1;});
+    const topType=Object.entries(types).sort((a,b)=>b[1]-a[1])[0];
+    entries.push({name,visits:visits.length,revenue:r,avg:visits.length?r/visits.length:0,cash,tr,pct:totalR?r/totalR*100:0,topMonth:topM?mnName(topM[0])+' ('+topM[1]+')':'—',topType:topType?topType[0]:'—',monthData:mG});
   });
   entries.sort((a,b)=>b.revenue-a.revenue);
   const badges=['🥇','🥈','🥉'];
+
+  // Heatmap: practitioners x months
+  const months=allMonths.slice();
+  const heatPrs=entries.slice(0,15); // top 15
+  const maxHeat=Math.max(...heatPrs.flatMap(p=>months.map(m=>p.monthData[m]||0)),1);
 
   el.innerHTML=`
   <div class="section-title">👨‍⚕️ الممارسين</div>
@@ -576,14 +557,35 @@ function renderPractitioners(){
     <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-value">${fmtCur(totalR)}</div><div class="kpi-label">إجمالي الإيرادات</div></div>
     <div class="kpi-card"><div class="kpi-icon">📊</div><div class="kpi-value">${entries.length?fmtCur(totalR/entries.length):'—'}</div><div class="kpi-label">متوسط لكل ممارس</div></div>
   </div>
+
   <div class="section-title">📊 ترتيب الممارسين</div>
-  <div class="table-wrap"><table><thead><tr><th>#</th><th>الممارس</th><th>الزيارات</th><th>الإيرادات</th><th>المتوسط</th><th>كاش</th><th>تحويل</th><th>%</th><th>أنشط شهر</th></tr></thead>
-  <tbody id="practTableBody">${entries.map((p,i)=>'<tr><td style="font-weight:700">'+((i+1))+(badges[i]||'')+'</td><td style="font-size:10px">'+p.name+'</td><td>'+fmt(p.visits)+'</td><td>'+fmtCur(Math.round(p.revenue))+'</td><td>'+fmtCur(Math.round(p.avg))+'</td><td>'+fmt(p.cash)+'</td><td>'+fmt(p.tr)+'</td><td>'+p.pct.toFixed(1)+'%</td><td style="font-size:9px">'+p.topMonth+'</td></tr>').join('')}</tbody>
-  </table></div>`;
+  <div class="table-wrap"><table><thead><tr><th>#</th><th>الممارس</th><th>الزيارات</th><th>الإيرادات</th><th>المتوسط</th><th>%</th><th>أنشط شهر</th></tr></thead>
+  <tbody>${entries.map((p,i)=>'<tr><td style="font-weight:700">'+((i+1))+(badges[i]||'')+'</td><td style="font-size:10px;font-weight:600">'+p.name+'</td><td style="font-weight:700;color:var(--accent)">'+fmt(p.visits)+'</td><td style="color:var(--green);font-weight:700">'+fmtCur(Math.round(p.revenue))+'</td><td>'+fmtCur(Math.round(p.avg))+'</td><td>'+p.pct.toFixed(1)+'%</td><td style="font-size:9px">'+p.topMonth+'</td></tr>').join('')}
+  <tr style="font-weight:800;border-top:2px solid var(--border);background:rgba(52,211,153,0.08)"><td></td><td>الإجمالي</td><td>${fmt(entries.reduce((s,p)=>s+p.visits,0))}</td><td>${fmtCur(totalR)}</td><td>—</td><td>100%</td><td></td></tr>
+  </tbody></table></div>
+
+  <div class="section-title">🔥 الجدول الحراري (زيارات × أشهر)</div>
+  <div class="heatmap-wrap"><table class="heatmap-table">
+    <thead><tr><th style="text-align:right;min-width:80px">الممارس</th>${months.map(m=>'<th>'+mnName(m).substring(0,3)+'</th>').join('')}<th>المجموع</th></tr></thead>
+    <tbody>${heatPrs.map(p=>{
+      const total=months.reduce((s,m)=>s+(p.monthData[m]||0),0);
+      return '<tr><td>'+p.name.split('-')[0].substring(0,12)+'</td>'+months.map(m=>{
+        const v=p.monthData[m]||0;
+        const intensity=maxHeat?v/maxHeat:0;
+        const bg=v===0?'transparent':('rgba(56,189,248,'+Math.max(0.15,intensity).toFixed(2)+')');
+        return '<td style="background:'+bg+';font-weight:'+(v>0?'700':'400')+';color:'+(v>0?'#38bdf8':'var(--text2)')+'">'+( v||'·')+'</td>';
+      }).join('')+'<td style="font-weight:800;color:var(--accent)">'+total+'</td></tr>';
+    }).join('')}</tbody>
+  </table></div>
+
+  <div class="section-title">📋 تفاصيل الممارسين</div>
+  ${entries.map((p,i)=>'<div class="practitioner-card" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="pc-name">'+(badges[i]||'')+(i+1)+'. '+p.name+'</div><div class="pc-stat">'+fmt(p.visits)+' زيارة | '+p.topType+' | كاش '+fmt(p.cash)+' | تحويل '+fmt(p.tr)+'</div></div><div class="pc-revenue">'+fmtCur(Math.round(p.revenue))+'</div></div><div style="margin-top:6px"><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:'+p.pct.toFixed(1)+'%;background:linear-gradient(90deg,#38bdf8,#34d399)"></div></div><span style="font-size:10px;font-weight:700">'+p.pct.toFixed(1)+'%</span></div></div></div>').join('')}
+  `;
 }
 
 // ==================== AMBULANCE ====================
 function renderAmbulance(){
+  populateMonthFilter();
   const el=document.getElementById('tab-ambulance');
   const data=ambData;
   const totalA=data.length,totalAR=sumAmount(data);
@@ -626,6 +628,7 @@ function renderAmbulance(){
 // ==================== MATCHES ====================
 let matchSearchVal='';
 function renderMatches(){
+  populateMonthFilter();
   const el=document.getElementById('tab-matches');
   const totalM=MATCHES_RAW.length,totalMRev=sumAmount(MATCHES_RAW);
   const avgM=totalM?totalMRev/totalM:0;
@@ -676,7 +679,7 @@ function renderMatches(){
       <tbody>${clubEntries.map(([n,d],i)=>{const pct=totalMRev?d.r/totalMRev*100:0;return `<tr><td style="font-weight:700">${i+1}${['🥇','🥈','🥉'][i]||''}</td><td>${n}</td><td>${fmt(d.c)}</td><td>${fmtCur(Math.round(d.r))}</td><td>${fmtCur(Math.round(d.c?d.r/d.c:0))}</td><td>${pct.toFixed(1)}%</td></tr>`;}).join('')}</tbody>
     </table></div>
     <div class="section-title purple">📋 تفاصيل المباريات</div>
-    <input type="text" class="search-box" placeholder="🔍 بحث عن نادي، فريق، موقع..." value="${matchSearchVal}" oninput="matchSearchVal=this.value;filterMatchRows();">
+    <input type="text" class="search-box" id="matchSearchInput" placeholder="🔍 بحث عن نادي، فريق، موقع..." value="${matchSearchVal}" oninput="matchSearchVal=this.value;filterMatchRows();">
     <div id="matchSearchCount" style="font-size:10px;color:var(--text2);margin-bottom:6px;"></div>
     <div class="scroll-table-wrap" style="max-height:350px;overflow-y:auto;"><table class="data-table">
       <thead><tr><th>التاريخ</th><th>النادي</th><th>الفريقين</th><th>الفئة</th><th>الموقع</th><th>المسعف</th><th>المبلغ</th></tr></thead>
@@ -685,6 +688,15 @@ function renderMatches(){
   `;
 }
 
+function _fixSearchScroll(){
+  ['visitsSearchInput','matchSearchInput'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!el._scrollFixed){
+      el._scrollFixed=true;
+      el.addEventListener('focus',function(){setTimeout(()=>{this.scrollIntoView({block:'center',behavior:'smooth'});},300);});
+    }
+  });
+}
 function filterMatchRows(){
   const q=matchSearchVal.trim().toLowerCase();
   let shown=0,total=0;
