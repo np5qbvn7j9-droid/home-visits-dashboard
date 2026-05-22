@@ -563,14 +563,6 @@ function renderPractitioners(){
       <tbody id="practTableBody">${entries.map((p,i)=>{const badges=['🥇','🥈','🥉'];return `<tr><td style="font-weight:700">${i+1}${badges[i]||''}</td><td style="font-size:10px">${p.name}</td><td>${fmt(p.visits)}</td><td>${fmtCur(Math.round(p.revenue))}</td><td>${fmtCur(Math.round(p.avg))}</td><td>${fmt(p.cash)}</td><td>${fmt(p.tr)}</td><td>${p.pct.toFixed(1)}%</td><td style="font-size:9px">${p.topMonth}</td></tr>`;}).join('')}</tbody>
     </table></div>
   `;
-  // Top 15 chart
-
-  // Top 5 monthly
-    const mData={};medNoMatch.filter(d=>d.practitioner===p.name).forEach(d=>{const m=getMonth(d.date);mData[m]=(mData[m]||0)+(d.amount||0);});
-    return {label:p.name,data:allMonths.map(m=>Math.round(mData[m]||0)),borderColor:palette[i],backgroundColor:'transparent',tension:.3,pointRadius:2};
-  });
-
-  // Avg per visit
 }
 
 // ==================== AMBULANCE ====================
