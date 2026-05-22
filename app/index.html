@@ -23,12 +23,17 @@
   --border:#e2e8f0;--shadow:0 4px 20px rgba(0,0,0,.08);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{height:100%;overflow:hidden;}
 body{
   font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);
-  min-height:100vh;min-height:100dvh;overflow-x:hidden;
+  height:100%;overflow:hidden;
   padding-bottom:calc(70px + env(safe-area-inset-bottom));
   padding-top:env(safe-area-inset-top);
   transition:background .3s,color .3s;
+}
+.app-scroll{
+  height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:none;
 }
 .header{
   position:sticky;top:0;z-index:100;
@@ -48,11 +53,11 @@ body{
 .tab-content.active{display:block;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 .bottom-nav{
-  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
   background:var(--card);border-top:1px solid var(--border);
   display:flex;justify-content:space-around;align-items:center;
   padding:6px 0 calc(6px + env(safe-area-inset-bottom));
-  backdrop-filter:blur(10px);
+  transform:translateZ(0);-webkit-transform:translateZ(0);
 }
 .nav-item{
   display:flex;flex-direction:column;align-items:center;gap:2px;
@@ -170,6 +175,7 @@ body{
 </style>
 </head>
 <body>
+<div class="app-scroll" id="appScroll">
 <div class="pull-indicator" id="pullInd">اسحب لتحديث...</div>
 <div class="header">
   <h1>داشبورد الزيارات</h1>
@@ -183,6 +189,7 @@ body{
 <div class="tab-content" id="tab-visits"></div>
 <div class="tab-content" id="tab-practitioners"></div>
 <div class="tab-content" id="tab-matches"></div>
+</div>
 
 <nav class="bottom-nav">
   <div class="nav-item active" data-tab="overview"><span class="icon">🏠</span><span class="label">نظرة عامة</span></div>
