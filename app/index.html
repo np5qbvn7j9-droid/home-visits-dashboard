@@ -566,10 +566,8 @@ function renderPractitioners(){
     Object.entries(curPr).forEach(([n,c])=>{if(prevPr[n]&&prevPr[n].r>0){const g=((c.r-prevPr[n].r)/prevPr[n].r*100);if(g>bestGrowthPct){bestGrowthPct=g;bestGrowth=n;}}});
     if(bestGrowth&&bestGrowthPct>0){const curRev=curPr[bestGrowth].r,prevRev=prevPr[bestGrowth].r;pAlerts.push({t:'green',i:'🏆',tx:`أفضل نمو بالإيرادات: <strong>${bestGrowth.split('-')[0]}</strong> ارتفع <strong>${Math.round(bestGrowthPct)}%</strong> (${fmtCur(Math.round(prevRev))} ← ${fmtCur(Math.round(curRev))})`});}
   }
-  // 2) أعلى ممارس بمتوسط الفاتورة
   const billable=entries.filter(p=>p.visits>=5);
-  if(billable.length>0){const topAvg=billable.reduce((a,b)=>a.avg>b.avg?a:b);pAlerts.push({t:'blue',i:'💰',tx:`أعلى متوسط فاتورة: <strong>${topAvg.name.split('-')[0]}</strong> بمتوسط <strong>${fmtCur(Math.round(topAvg.avg))}</strong> لكل زيارة`});}
-  // 3) فرع بتغطية ضعيفة
+  // 2) فرع بتغطية ضعيفة
 
   // Branch breakdown
   const brPr={};data.forEach(d=>{if(d.practitioner&&d.practitioner!=='-'&&d.branch){const b=d.branch;if(!brPr[b])brPr[b]={prs:new Set(),cnt:0,r:0};brPr[b].prs.add(d.practitioner);brPr[b].cnt++;brPr[b].r+=d.amount||0;}});
