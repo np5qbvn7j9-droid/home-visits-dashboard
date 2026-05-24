@@ -558,14 +558,6 @@ function renderPractitioners(){
   const maxHeat=Math.max(...heatPrs.flatMap(p=>months.map(m=>p.monthData[m]||0)),1);
 
   el.innerHTML=`
-  <div class="section-title">📊 ترتيب الممارسين (${fmt(entries.length)})</div>
-  <input type="text" class="search-box" id="practSearchInput" placeholder="🔍 بحث بالاسم..." oninput="filterPractRows(this.value)">
-  <div id="practSearchCount" style="font-size:10px;color:var(--text2);margin:4px 0 8px;text-align:center"></div>
-  <div class="scroll-table-wrap"><table class="data-table"><thead><tr><th>#</th><th>الممارس</th><th>الزيارات</th><th>الإيرادات</th></tr></thead>
-  <tbody id="practAllBody">${entries.map((p,i)=>'<tr data-psearch="'+p.name.toLowerCase()+'"><td class="td-num">'+(i+1)+(badges[i]||'')+'</td><td><div class="td-name" style="font-size:11px">'+p.name+'</div><div class="td-sub">'+p.pct.toFixed(1)+'% | متوسط '+fmtCur(Math.round(p.avg))+'</div></td><td class="td-num">'+fmt(p.visits)+'</td><td class="td-money">'+fmtCur(Math.round(p.revenue))+'</td></tr>').join('')}
-  <tr class="total-row"><td></td><td class="td-name">الإجمالي</td><td class="td-num">${fmt(entries.reduce((s,p)=>s+p.visits,0))}</td><td class="td-money">${fmtCur(totalR)}</td></tr>
-  </tbody></table></div>
-
   <div class="section-title">🔥 الخريطة الحرارية</div>
   <div class="heatmap-wrap"><table class="heatmap-table">
     <thead><tr><th style="text-align:right;min-width:70px">الممارس</th>${months.map(m=>'<th>'+mnName(m).substring(0,3)+'</th>').join('')}<th>المجموع</th></tr></thead>
@@ -579,6 +571,14 @@ function renderPractitioners(){
       }).join('')+'<td style="font-weight:800;color:var(--accent)">'+total+'</td></tr>';
     }).join('')}</tbody>
   </table></div>
+
+  <div class="section-title">📊 ترتيب الممارسين (${fmt(entries.length)})</div>
+  <input type="text" class="search-box" id="practSearchInput" placeholder="🔍 بحث بالاسم..." oninput="filterPractRows(this.value)">
+  <div id="practSearchCount" style="font-size:10px;color:var(--text2);margin:4px 0 8px;text-align:center"></div>
+  <div class="scroll-table-wrap"><table class="data-table"><thead><tr><th>#</th><th>الممارس</th><th>الزيارات</th><th>الإيرادات</th></tr></thead>
+  <tbody id="practAllBody">${entries.map((p,i)=>'<tr data-psearch="'+p.name.toLowerCase()+'"><td class="td-num">'+(i+1)+(badges[i]||'')+'</td><td><div class="td-name" style="font-size:11px">'+p.name+'</div><div class="td-sub">'+p.pct.toFixed(1)+'% | متوسط '+fmtCur(Math.round(p.avg))+'</div></td><td class="td-num">'+fmt(p.visits)+'</td><td class="td-money">'+fmtCur(Math.round(p.revenue))+'</td></tr>').join('')}
+  <tr class="total-row"><td></td><td class="td-name">الإجمالي</td><td class="td-num">${fmt(entries.reduce((s,p)=>s+p.visits,0))}</td><td class="td-money">${fmtCur(totalR)}</td></tr>
+  </tbody></table></div>
   `;
   _fixPractSearchScroll();
 }
