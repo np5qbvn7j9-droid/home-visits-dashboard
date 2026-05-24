@@ -2186,7 +2186,7 @@ buildPatientNameMap(RAW);
 populateFilters(RAW);applyFilters();
 }
 _initDash();
-(async function(){try{const[vR,mR]=await Promise.all([fetch(_VS_URL),fetch(_MS_URL)]);if(!vR.ok||!mR.ok)throw new Error("fetch failed");const[vT,mT]=await Promise.all([vR.text(),mR.text()]);const nV=_parseVisitsCSV(vT),nM=_parseMatchesCSV(mT);if(nV.length>0&&nV.length!==RAW.length||nV.length>0){RAW=nV;if(nM.length>0)MATCHES_RAW=nM;console.log("✅ Google Sheets:",RAW.length,"visits,",MATCHES_RAW.length,"matches");_initDash();}}catch(e){console.warn("⚠️ Using embedded data:",e.message);}})();
+(async function(){try{const[vR,mR]=await Promise.all([fetch(_VS_URL,{cache:"no-store"}),fetch(_MS_URL,{cache:"no-store"})]);if(!vR.ok||!mR.ok)throw new Error("fetch failed");const[vT,mT]=await Promise.all([vR.text(),mR.text()]);const nV=_parseVisitsCSV(vT),nM=_parseMatchesCSV(mT);if(nV.length>0){RAW=nV;MATCHES_RAW=nM.length>0?nM:MATCHES_RAW;console.log("✅ Google Sheets:",RAW.length,"visits,",MATCHES_RAW.length,"matches");_initDash();const el=document.getElementById("syncStatus");if(!el){const d=document.createElement("div");d.id="syncStatus";d.style.cssText="position:fixed;top:8px;left:50%;transform:translateX(-50%);padding:6px 16px;border-radius:20px;font-size:12px;z-index:9999;background:#22c55e;color:#fff;";d.textContent="✅ تم تحديث البيانات — "+RAW.length+" زيارة";document.body.appendChild(d);setTimeout(()=>d.style.opacity="0",3000);}}}catch(e){console.warn("⚠️ Using embedded data:",e.message);}})();
 ["filterVisitType","filterPractitioner","filterBranch","filterPayment","filterDriver"].forEach(id=>{
   document.getElementById(id).addEventListener("change",applyFilters);
 });
