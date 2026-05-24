@@ -582,6 +582,7 @@ function renderPractitioners(){
   <div class="kpi-grid">
     <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-value">${fmt(entries.length)}</div><div class="kpi-label">الممارسين النشطين</div></div>
     <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-value" style="font-size:13px">${best.name.split('-')[0]}</div><div class="kpi-label">أفضل ممارس</div><div class="kpi-sub" style="font-size:10px;color:var(--text2)">${fmtCur(Math.round(best.revenue))}</div></div>
+    <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-value" style="font-size:13px">${billable.length?billable.reduce((a,b)=>a.avg>b.avg?a:b).name.split('-')[0]:'—'}</div><div class="kpi-label">أعلى متوسط فاتورة</div><div class="kpi-sub" style="font-size:10px;color:var(--text2)">${billable.length?fmtCur(Math.round(billable.reduce((a,b)=>a.avg>b.avg?a:b).avg)):'—'}</div></div>
   </div>
 
   ${pAlerts.length?'<div class="alerts-wrap">'+pAlerts.map(a=>'<div class="alert-item '+a.t+'"><span class="alert-icon">'+a.i+'</span><div class="alert-text">'+a.tx+'</div></div>').join('')+'</div>':''}
