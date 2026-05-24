@@ -90,7 +90,7 @@ body{
 
 .scroll-table-wrap,.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:2px;}
 .scroll-table-wrap table,.table-wrap table,.data-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;}
-.scroll-table-wrap th,.table-wrap th,.data-table th{background:var(--bg);padding:10px 8px;text-align:right;font-weight:700;color:var(--accent);font-size:11px;position:sticky;top:0;z-index:1;white-space:nowrap;border-bottom:2px solid var(--border);}
+.scroll-table-wrap th,.table-wrap th,.data-table th{background:var(--card);padding:10px 8px;text-align:right;font-weight:700;color:var(--accent);font-size:11px;position:sticky;top:0;z-index:3;white-space:nowrap;border-bottom:2px solid var(--border);}
 .scroll-table-wrap td,.table-wrap td,.data-table td{padding:10px 8px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5;vertical-align:middle;}
 .scroll-table-wrap tr:last-child td,.table-wrap tr:last-child td,.data-table tr:last-child td{border-bottom:none;}
 .scroll-table-wrap tr:nth-child(even) td,.table-wrap tr:nth-child(even) td{background:rgba(255,255,255,0.02);}
@@ -492,7 +492,7 @@ function renderVisits(){
   <div class="section-title">📋 جميع الزيارات (${fmt(allSorted.length)})</div>
   <input type="text" class="search-box" id="visitsSearchInput" placeholder="🔍 بحث بالاسم، الممارس، النوع..." oninput="filterVisitsRows(this.value)">
   <div id="visitsSearchCount" style="font-size:10px;color:var(--text2);margin:4px 0 8px;text-align:center"></div>
-  <div class="scroll-table-wrap" style="max-height:450px;overflow-y:auto;"><table class="data-table"><thead style="position:sticky;top:0;z-index:2;"><tr><th>التاريخ</th><th>المريض</th><th>النوع</th><th>المبلغ</th><th>الفاتورة</th><th>السائق</th></tr></thead>
+  <div class="scroll-table-wrap" style="max-height:450px;overflow-y:auto;"><table class="data-table"><thead><tr><th>التاريخ</th><th>المريض</th><th>النوع</th><th>المبلغ</th><th>الفاتورة</th><th>السائق</th></tr></thead>
   <tbody id="visitsAllBody">${allSorted.map((d,i)=>'<tr data-vsearch="'+((d.patient||'')+'|'+(d.practitioner||'')+'|'+(d.visit_type||'')+'|'+(d.date||'')+'|'+(d.branch||'')+'|'+(d.notes||'')+'|'+(d.invoice||'')+'|'+(d.driver||'')).toLowerCase()+'"><td class="td-sub" style="white-space:nowrap">'+d.date+'</td><td><div class="td-name" style="font-size:11px">'+d.patient+'</div><div class="td-sub">'+d.practitioner+'</div></td><td class="td-sub" style="white-space:nowrap">'+d.visit_type+'</td><td class="td-money" style="white-space:nowrap">'+fmtCur(d.amount)+'</td><td class="td-sub" style="font-size:10px;white-space:nowrap">'+(d.invoice||'-')+'</td><td class="td-sub" style="font-size:10px;white-space:nowrap">'+(d.driver&&d.driver!=='-'?d.driver:'-')+'</td></tr>').join('')}</tbody>
   </table></div>`;
   _fixSearchScroll();
@@ -568,7 +568,7 @@ function renderPractitioners(){
 function renderAmbulance(){
   populateMonthFilter();
   const el=document.getElementById('tab-ambulance');
-  const data=ambData;
+  const data=filterByMonth(ambData);
   const totalA=data.length,totalAR=sumAmount(data);
   const avgA=totalA?totalAR/totalA:0;
   const zeroA=data.filter(d=>d.amount===0).length;
@@ -611,21 +611,23 @@ let matchSearchVal='';
 function renderMatches(){
   populateMonthFilter();
   const el=document.getElementById('tab-matches');
-  const totalM=MATCHES_RAW.length,totalMRev=sumAmount(MATCHES_RAW);
+  const fMatch=filterByMonth(MATCHES_RAW);
+  const totalM=fMatch.length,totalMRev=sumAmount(fMatch);
   const avgM=totalM?totalMRev/totalM:0;
-  const clubs=new Set(MATCHES_RAW.filter(d=>d.club).map(d=>d.club));
-  const locations=new Set(MATCHES_RAW.filter(d=>d.location&&d.location!=='-'&&d.location!=='').map(d=>d.location));
-  const clubMap={};MATCHES_RAW.forEach(d=>{if(d.club){if(!clubMap[d.club])clubMap[d.club]={c:0,r:0};clubMap[d.club].c++;clubMap[d.club].r+=(d.amount||0);}});
+  const clubs=new Set(fMatch.filter(d=>d.club).map(d=>d.club));
+  const locations=new Set(fMatch.filter(d=>d.location&&d.location!=='-'&&d.location!=='').map(d=>d.location));
+  const clubMap={};fMatch.forEach(d=>{if(d.club){if(!clubMap[d.club])clubMap[d.club]={c:0,r:0};clubMap[d.club].c++;clubMap[d.club].r+=(d.amount||0);}});
   const clubEntries=Object.entries(clubMap).sort((a,b)=>b[1].r-a[1].r);
   const topClub=clubEntries[0]?clubEntries[0][0]+' ('+clubEntries[0][1].c+')':'—';
 
   // Monthly breakdown
-  const mStats=matchMonths.map(m=>({m,c:MATCHES_RAW.filter(d=>d.date&&d.date.startsWith(m)).length,r:sumAmount(MATCHES_RAW.filter(d=>d.date&&d.date.startsWith(m)))}));
+  const fMonths=[...new Set(fMatch.filter(d=>d.date).map(d=>getMonth(d.date)))].sort();
+  const mStats=fMonths.map(m=>({m,c:fMatch.filter(d=>d.date&&d.date.startsWith(m)).length,r:sumAmount(fMatch.filter(d=>d.date&&d.date.startsWith(m)))}));
 
   // Alerts
   const mAlerts=[];
   if(mStats.length>=2){for(let i=1;i<mStats.length;i++){const p=mStats[i-1],c=mStats[i];if(p.c>0&&c.c<p.c*0.7)mAlerts.push({type:'red',icon:'📉',text:`المباريات انخفضت <strong>${((p.c-c.c)/p.c*100).toFixed(0)}%</strong> في ${mnName(c.m)}`});}}
-  const mZero=MATCHES_RAW.filter(d=>!d.amount).length;
+  const mZero=fMatch.filter(d=>!d.amount).length;
   if(mZero>0) mAlerts.push({type:'blue',icon:'⚽',text:`<strong>${mZero} مباراة</strong> بدون إيراد`});
   if(clubEntries.length>1) mAlerts.push({type:'purple',icon:'🏆',text:`أكثر الأندية: <strong>${clubEntries[0][0]}</strong> (${clubEntries[0][1].c}) يليه <strong>${clubEntries[1][0]}</strong> (${clubEntries[1][1].c})`});
 
@@ -634,7 +636,7 @@ function renderMatches(){
   const bestRevM=mStats.slice().sort((a,b)=>b.r-a.r)[0]||{m:'',r:0};
 
   // All matches sorted
-  const allSorted=MATCHES_RAW.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const allSorted=fMatch.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
 
   el.innerHTML=`
     <div class="kpi-grid">
