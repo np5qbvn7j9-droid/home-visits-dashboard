@@ -564,7 +564,7 @@ function renderPractitioners(){
     const prevPr={};data.filter(d=>d.date&&d.date.startsWith(prevM)).forEach(d=>{if(d.practitioner&&d.practitioner!=='-'){if(!prevPr[d.practitioner])prevPr[d.practitioner]={v:0,r:0};prevPr[d.practitioner].v++;prevPr[d.practitioner].r+=d.amount||0;}});
     let bestGrowth=null,bestGrowthPct=0;
     Object.entries(curPr).forEach(([n,c])=>{if(prevPr[n]&&prevPr[n].r>0){const g=((c.r-prevPr[n].r)/prevPr[n].r*100);if(g>bestGrowthPct){bestGrowthPct=g;bestGrowth=n;}}});
-    if(bestGrowth&&bestGrowthPct>0) pAlerts.push({t:'green',i:'🏆',tx:`أفضل نمو: <strong>${bestGrowth.split('-')[0]}</strong> ارتفع <strong>${Math.round(bestGrowthPct)}%</strong> في ${mnName(curM)} مقارنة بـ${mnName(prevM)}`});
+    if(bestGrowth&&bestGrowthPct>0){const curRev=curPr[bestGrowth].r,prevRev=prevPr[bestGrowth].r;pAlerts.push({t:'green',i:'🏆',tx:`أفضل نمو بالإيرادات: <strong>${bestGrowth.split('-')[0]}</strong> ارتفع <strong>${Math.round(bestGrowthPct)}%</strong> (${fmtCur(Math.round(prevRev))} ← ${fmtCur(Math.round(curRev))})`});}
   }
   // 2) أعلى ممارس بمتوسط الفاتورة
   const billable=entries.filter(p=>p.visits>=5);
