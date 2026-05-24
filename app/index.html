@@ -100,6 +100,8 @@ body{
 .td-money{color:var(--green);font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;}
 .td-pct{font-size:11px;color:var(--text2);white-space:nowrap;}
 .td-sub{font-size:10px;color:var(--text2);white-space:nowrap;}
+.sort-btn{background:var(--card);color:var(--text2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;}
+.sort-btn.active{background:var(--accent);color:#0f172a;border-color:var(--accent);}
 .summary-box{background:var(--card);border-radius:var(--radius);padding:14px;font-size:12px;line-height:1.8;color:var(--text);box-shadow:var(--shadow);margin-bottom:14px;border-right:3px solid var(--accent);}
 .summary-box strong,.summary-box span{color:var(--accent2);font-weight:700;}
 .summary-box .warn{color:#ef4444;}
@@ -551,15 +553,63 @@ function renderPractitioners(){
   });
   entries.sort((a,b)=>b.revenue-a.revenue);
   const badges=['🥇','🥈','🥉'];
+  const best=entries[0]||{name:'—',revenue:0};
+
+  // Alerts
+  const pAlerts=[];
+  // 1) ممارسين انخفض أداؤهم
+  if(allMonths.length>=2){
+    const curM=allMonths[allMonths.length-1],prevM=allMonths[allMonths.length-2];
+    const curData=data.filter(d=>d.date&&d.date.startsWith(curM));
+    const prevData=data.filter(d=>d.date&&d.date.startsWith(prevM));
+    const curPr={};curData.forEach(d=>{if(d.practitioner&&d.practitioner!=='-')curPr[d.practitioner]=(curPr[d.practitioner]||0)+1;});
+    const prevPr={};prevData.forEach(d=>{if(d.practitioner&&d.practitioner!=='-')prevPr[d.practitioner]=(prevPr[d.practitioner]||0)+1;});
+    const dropped=Object.entries(prevPr).filter(([n,c])=>c>=3&&(!curPr[n]||curPr[n]<c*0.5)&&!FORMER_PRACTS.some(fp=>n.includes(fp)));
+    if(dropped.length>0) pAlerts.push({t:'red',i:'📉',tx:`<strong>${dropped.length} ممارس</strong> انخفض أداؤهم أكثر من 50% في ${mnName(curM)}`});
+  }
+  // 2) بدون زيارات هالشهر
+  if(allMonths.length>=1){
+    const lastM=allMonths[allMonths.length-1];
+    const lastData=data.filter(d=>d.date&&d.date.startsWith(lastM));
+    const lastPrs=new Set(lastData.map(d=>d.practitioner).filter(Boolean));
+    const allPrs=new Set(data.map(d=>d.practitioner).filter(p=>p&&p!=='-'));
+    const inactive=[...allPrs].filter(p=>!lastPrs.has(p)&&!FORMER_PRACTS.some(fp=>p.includes(fp)));
+    if(inactive.length>0) pAlerts.push({t:'yellow',i:'⚠️',tx:`<strong>${inactive.length} ممارس</strong> لم يسجل زيارات في ${mnName(lastM)}`});
+  }
+  // 3) نسبة تحصيل ضعيفة
+  const lowCollection=entries.filter(p=>{const zero=prG[p.name]?prG[p.name].filter(d=>d.amount===0).length:0;return p.visits>=5&&zero/p.visits>=0.4;});
+  if(lowCollection.length>0) pAlerts.push({t:'blue',i:'💸',tx:`<strong>${lowCollection.length} ممارس</strong> نسبة التحصيل أقل من 60%`});
+
+  // Branch breakdown
+  const brPr={};data.forEach(d=>{if(d.practitioner&&d.practitioner!=='-'&&d.branch){const b=d.branch;if(!brPr[b])brPr[b]={prs:new Set(),cnt:0,r:0};brPr[b].prs.add(d.practitioner);brPr[b].cnt++;brPr[b].r+=d.amount||0;}});
+  const brEntries=Object.entries(brPr).sort((a,b)=>b[1].r-a[1].r);
 
   el.innerHTML=`
+  <div class="section-title">👨‍⚕️ الممارسين</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-value">${fmt(entries.length)}</div><div class="kpi-label">الممارسين النشطين</div></div>
+    <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-value" style="font-size:13px">${best.name.split('-')[0]}</div><div class="kpi-label">أفضل ممارس</div><div class="kpi-sub" style="font-size:10px;color:var(--text2)">${fmtCur(Math.round(best.revenue))}</div></div>
+  </div>
+
+  ${pAlerts.length?'<div class="alerts-wrap">'+pAlerts.map(a=>'<div class="alert-item '+a.t+'"><span class="alert-icon">'+a.i+'</span><div class="alert-text">'+a.tx+'</div></div>').join('')+'</div>':''}
+
   <div class="section-title">📊 ترتيب الممارسين (${fmt(entries.length)})</div>
+  <div style="display:flex;gap:6px;margin-bottom:10px;justify-content:center;" id="practSortBtns">
+    <button class="sort-btn active" data-sort="revenue" onclick="sortPract('revenue')">الإيرادات</button>
+    <button class="sort-btn" data-sort="visits" onclick="sortPract('visits')">الزيارات</button>
+    <button class="sort-btn" data-sort="avg" onclick="sortPract('avg')">المتوسط</button>
+  </div>
   <input type="text" class="search-box" id="practSearchInput" placeholder="🔍 بحث بالاسم..." oninput="filterPractRows(this.value)">
   <div id="practSearchCount" style="font-size:10px;color:var(--text2);margin:4px 0 8px;text-align:center"></div>
   <div class="scroll-table-wrap" style="max-height:450px;overflow-y:auto;overflow-x:hidden;"><table class="data-table" style="table-layout:fixed;"><thead><tr><th style="width:10%">#</th><th>الممارس</th><th style="width:18%">الزيارات</th><th style="width:22%">الإيرادات</th></tr></thead>
-  <tbody id="practAllBody">${entries.map((p,i)=>'<tr data-psearch="'+p.name.toLowerCase()+'"><td class="td-num">'+(i+1)+(badges[i]||'')+'</td><td><div class="td-name" style="font-size:11px">'+p.name+'</div><div class="td-sub">'+p.pct.toFixed(1)+'% | متوسط '+fmtCur(Math.round(p.avg))+'</div></td><td class="td-num">'+fmt(p.visits)+'</td><td class="td-money">'+fmtCur(Math.round(p.revenue))+'</td></tr>').join('')}
+  <tbody id="practAllBody">${entries.map((p,i)=>'<tr data-psearch="'+p.name.toLowerCase()+'" data-prev="'+p.revenue+'" data-pvisits="'+p.visits+'" data-pavg="'+Math.round(p.avg)+'"><td class="td-num">'+(i+1)+(badges[i]||'')+'</td><td><div class="td-name" style="font-size:11px">'+p.name+'</div><div class="td-sub">'+p.pct.toFixed(1)+'% | متوسط '+fmtCur(Math.round(p.avg))+'</div></td><td class="td-num">'+fmt(p.visits)+'</td><td class="td-money">'+fmtCur(Math.round(p.revenue))+'</td></tr>').join('')}
   <tr class="total-row"><td></td><td class="td-name">الإجمالي</td><td class="td-num">${fmt(entries.reduce((s,p)=>s+p.visits,0))}</td><td class="td-money">${fmtCur(totalR)}</td></tr>
   </tbody></table></div>
+
+  <div class="section-title">🏢 الممارسين حسب الفروع</div>
+  <div class="scroll-table-wrap"><table class="data-table"><thead><tr><th>الفرع</th><th>الممارسين</th><th>الإيرادات</th></tr></thead>
+  <tbody>${brEntries.map(([b,d])=>'<tr><td class="td-name">'+b.replace("عادل كير ","").replace("بلوديم ","ب.")+'</td><td class="td-num">'+d.prs.size+'</td><td class="td-money">'+fmtCur(Math.round(d.r))+'</td></tr>').join('')}</tbody>
+  </table></div>
   `;
   _fixPractSearchScroll();
 }
@@ -692,6 +742,16 @@ function filterPractRows(val){
   document.querySelectorAll('#practAllBody tr:not(.total-row)').forEach(r=>{total++;const s=r.dataset.psearch||'';const show=!q||s.includes(q);r.style.display=show?'':'none';if(show)shown++;});
   const cnt=document.getElementById('practSearchCount');
   if(cnt)cnt.textContent=q?'عرض '+shown+' من '+total:'';
+}
+function sortPract(by){
+  const body=document.getElementById('practAllBody');
+  if(!body)return;
+  const rows=[...body.querySelectorAll('tr:not(.total-row)')];
+  const key=by==='visits'?'pvisits':by==='avg'?'pavg':'prev';
+  rows.sort((a,b)=>parseFloat(b.dataset[key]||0)-parseFloat(a.dataset[key]||0));
+  const badges=['🥇','🥈','🥉'];
+  rows.forEach((r,i)=>{r.querySelector('td').innerHTML='<span class="td-num">'+(i+1)+(badges[i]||'')+'</span>';body.appendChild(r);});
+  document.querySelectorAll('#practSortBtns .sort-btn').forEach(b=>{b.classList.toggle('active',b.dataset.sort===by);});
 }
 function filterMatchRows(){
   const q=matchSearchVal.trim().toLowerCase();
