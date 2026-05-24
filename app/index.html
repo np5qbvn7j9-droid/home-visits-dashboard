@@ -580,7 +580,7 @@ function renderPractitioners(){
   el.innerHTML=`
   <div class="section-title">👨‍⚕️ الممارسين</div>
   <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-value">${fmt(entries.length)}</div><div class="kpi-label">الممارسين النشطين</div></div>
+    <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-value">${fmt(entries.length)}</div><div class="kpi-label">الممارسين النشطين</div><div class="kpi-sub" style="font-size:9px;color:var(--text2);line-height:1.6">${brEntries.map(([b,d])=>b.replace("عادل كير ","").replace("بلوديم ","ب.")+': '+d.prs.size).join(' | ')}</div></div>
     <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-value" style="font-size:13px">${best.name.split('-')[0]}</div><div class="kpi-label">أفضل ممارس</div><div class="kpi-sub" style="font-size:10px;color:var(--text2)">${fmtCur(Math.round(best.revenue))}</div><div class="kpi-sub" style="font-size:9px;color:var(--text2)">${fmt(best.visits)} زيارة | متوسط ${fmtCur(Math.round(best.avg))}</div></div>
     <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-value" style="font-size:13px">${billable.length?((tp)=>tp.name.split('-')[0])(billable.reduce((a,b)=>a.avg>b.avg?a:b)):'—'}</div><div class="kpi-label">أعلى متوسط فاتورة</div><div class="kpi-sub" style="font-size:10px;color:var(--text2)">${billable.length?((tp)=>fmtCur(Math.round(tp.avg)))(billable.reduce((a,b)=>a.avg>b.avg?a:b)):'—'}</div><div class="kpi-sub" style="font-size:9px;color:var(--text2)">${billable.length?((tp)=>fmt(tp.visits)+' زيارة | إجمالي '+fmtCur(Math.round(tp.revenue)))(billable.reduce((a,b)=>a.avg>b.avg?a:b)):'—'}</div></div>
   </div>
