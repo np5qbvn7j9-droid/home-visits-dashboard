@@ -557,32 +557,25 @@ function renderPractitioners(){
 
   // Alerts
   const pAlerts=[];
-  // 1) ممارسين انخفض أداؤهم
+  // 1) أفضل ممارس تحسناً هالشهر مقارنة بالسابق
   if(allMonths.length>=2){
     const curM=allMonths[allMonths.length-1],prevM=allMonths[allMonths.length-2];
-    const curData=data.filter(d=>d.date&&d.date.startsWith(curM));
-    const prevData=data.filter(d=>d.date&&d.date.startsWith(prevM));
-    const curPr={};curData.forEach(d=>{if(d.practitioner&&d.practitioner!=='-')curPr[d.practitioner]=(curPr[d.practitioner]||0)+1;});
-    const prevPr={};prevData.forEach(d=>{if(d.practitioner&&d.practitioner!=='-')prevPr[d.practitioner]=(prevPr[d.practitioner]||0)+1;});
-    const dropped=Object.entries(prevPr).filter(([n,c])=>c>=3&&(!curPr[n]||curPr[n]<c*0.5)&&!FORMER_PRACTS.some(fp=>n.includes(fp)));
-    if(dropped.length>0) pAlerts.push({t:'red',i:'📉',tx:`<strong>${dropped.length} ممارس</strong> انخفض أداؤهم أكثر من 50% في ${mnName(curM)}`});
+    const curPr={};data.filter(d=>d.date&&d.date.startsWith(curM)).forEach(d=>{if(d.practitioner&&d.practitioner!=='-'){if(!curPr[d.practitioner])curPr[d.practitioner]={v:0,r:0};curPr[d.practitioner].v++;curPr[d.practitioner].r+=d.amount||0;}});
+    const prevPr={};data.filter(d=>d.date&&d.date.startsWith(prevM)).forEach(d=>{if(d.practitioner&&d.practitioner!=='-'){if(!prevPr[d.practitioner])prevPr[d.practitioner]={v:0,r:0};prevPr[d.practitioner].v++;prevPr[d.practitioner].r+=d.amount||0;}});
+    let bestGrowth=null,bestGrowthPct=0;
+    Object.entries(curPr).forEach(([n,c])=>{if(prevPr[n]&&prevPr[n].r>0){const g=((c.r-prevPr[n].r)/prevPr[n].r*100);if(g>bestGrowthPct){bestGrowthPct=g;bestGrowth=n;}}});
+    if(bestGrowth&&bestGrowthPct>0) pAlerts.push({t:'green',i:'🏆',tx:`أفضل نمو: <strong>${bestGrowth.split('-')[0]}</strong> ارتفع <strong>${Math.round(bestGrowthPct)}%</strong> في ${mnName(curM)} مقارنة بـ${mnName(prevM)}`});
   }
-  // 2) بدون زيارات هالشهر
-  if(allMonths.length>=1){
-    const lastM=allMonths[allMonths.length-1];
-    const lastData=data.filter(d=>d.date&&d.date.startsWith(lastM));
-    const lastPrs=new Set(lastData.map(d=>d.practitioner).filter(Boolean));
-    const allPrs=new Set(data.map(d=>d.practitioner).filter(p=>p&&p!=='-'));
-    const inactive=[...allPrs].filter(p=>!lastPrs.has(p)&&!FORMER_PRACTS.some(fp=>p.includes(fp)));
-    if(inactive.length>0) pAlerts.push({t:'yellow',i:'⚠️',tx:`<strong>${inactive.length} ممارس</strong> لم يسجل زيارات في ${mnName(lastM)}`});
-  }
-  // 3) نسبة تحصيل ضعيفة
-  const lowCollection=entries.filter(p=>{const zero=prG[p.name]?prG[p.name].filter(d=>d.amount===0).length:0;return p.visits>=5&&zero/p.visits>=0.4;});
-  if(lowCollection.length>0) pAlerts.push({t:'blue',i:'💸',tx:`<strong>${lowCollection.length} ممارس</strong> نسبة التحصيل أقل من 60%`});
+  // 2) أعلى ممارس بمتوسط الفاتورة
+  const billable=entries.filter(p=>p.visits>=5);
+  if(billable.length>0){const topAvg=billable.reduce((a,b)=>a.avg>b.avg?a:b);pAlerts.push({t:'blue',i:'💰',tx:`أعلى متوسط فاتورة: <strong>${topAvg.name.split('-')[0]}</strong> بمتوسط <strong>${fmtCur(Math.round(topAvg.avg))}</strong> لكل زيارة`});}
+  // 3) فرع بتغطية ضعيفة
 
   // Branch breakdown
   const brPr={};data.forEach(d=>{if(d.practitioner&&d.practitioner!=='-'&&d.branch){const b=d.branch;if(!brPr[b])brPr[b]={prs:new Set(),cnt:0,r:0};brPr[b].prs.add(d.practitioner);brPr[b].cnt++;brPr[b].r+=d.amount||0;}});
   const brEntries=Object.entries(brPr).sort((a,b)=>b[1].r-a[1].r);
+  const weakBranch=brEntries.filter(([b,d])=>d.prs.size<=2);
+  if(weakBranch.length>0) pAlerts.push({t:'yellow',i:'🏢',tx:`تغطية ضعيفة: <strong>${weakBranch.map(([b])=>b.replace("عادل كير ","").replace("بلوديم ","ب.")).join('، ')}</strong> (${weakBranch[0][1].prs.size} ممارس فقط)`});
 
   el.innerHTML=`
   <div class="section-title">👨‍⚕️ الممارسين</div>
