@@ -553,7 +553,8 @@ function renderPractitioners(){
   });
   entries.sort((a,b)=>b.revenue-a.revenue);
   const badges=['🥇','🥈','🥉'];
-  const best=entries[0]||{name:'—',revenue:0};
+  const noPhysio=entries.filter(p=>!p.name.includes('علاج طبيعي'));
+  const best=noPhysio[0]||{name:'—',revenue:0,visits:0,avg:0};
 
   // Alerts
   const pAlerts=[];
@@ -566,7 +567,7 @@ function renderPractitioners(){
     Object.entries(curPr).forEach(([n,c])=>{if(prevPr[n]&&prevPr[n].r>0){const g=((c.r-prevPr[n].r)/prevPr[n].r*100);if(g>bestGrowthPct){bestGrowthPct=g;bestGrowth=n;}}});
     if(bestGrowth&&bestGrowthPct>0){const curRev=curPr[bestGrowth].r,prevRev=prevPr[bestGrowth].r;pAlerts.push({t:'green',i:'🏆',tx:`أفضل نمو بالإيرادات: <strong>${bestGrowth.split('-')[0]}</strong> ارتفع <strong>${Math.round(bestGrowthPct)}%</strong> (${fmtCur(Math.round(prevRev))} ← ${fmtCur(Math.round(curRev))})`});}
   }
-  const billable=entries.filter(p=>p.visits>=5);
+  const billable=entries.filter(p=>p.visits>=5&&!p.name.includes('علاج طبيعي'));
   // 2) فرع بتغطية ضعيفة
 
   // Branch breakdown
