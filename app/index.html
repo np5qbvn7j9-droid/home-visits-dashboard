@@ -666,7 +666,7 @@ function renderMatches(){
     <div id="matchSearchCount" style="font-size:10px;color:var(--text2);margin-bottom:6px;"></div>
     <div class="scroll-table-wrap" style="max-height:350px;overflow-y:auto;overflow-x:hidden;"><table class="data-table" style="table-layout:fixed;">
       <thead><tr><th style="width:22%">التاريخ</th><th>النادي / الفريقين</th><th style="width:20%">المبلغ</th></tr></thead>
-      <tbody id="matchDetailsBody">${allSorted.map(d=>`<tr data-search="${[d.date,d.club,d.teams,d.category,d.location,d.paramedic,d.driver].join(' ').toLowerCase()}"><td class="td-sub">${d.date}</td><td><div class="td-name" style="font-size:11px">${d.club||'—'}</div><div class="td-sub">${d.teams||'—'} · ${d.category||''}</div></td><td class="td-money">${fmtCur(d.amount)}</td></tr>`).join('')}</tbody>
+      <tbody id="matchDetailsBody">${allSorted.map(d=>`<tr data-search="${[d.date,d.club,d.teams,d.category,d.location,d.paramedic,d.driver].join(' ').toLowerCase()}"><td><div class="td-sub">${d.date}</div>${d.driver&&d.driver!=='-'&&d.driver!==''?'<div class="td-sub" style="font-size:9px;color:#94a3b8">'+d.driver+'</div>':''}</td><td><div class="td-name" style="font-size:11px">${d.club||'—'}</div><div class="td-sub">${d.teams||'—'} · ${d.category||''}</div>${d.location&&d.location!=='-'&&d.location!==''?'<div class="td-sub" style="font-size:9px;color:#94a3b8">📍 '+d.location+'</div>':''}</td><td class="td-money">${fmtCur(d.amount)}</td></tr>`).join('')}</tbody>
     </table></div>
   `;
 }
