@@ -1384,17 +1384,18 @@ function render(){
     document.getElementById("kpiPractActiveSub").textContent=branchSummary;
 
     const topRev=pList.slice().sort((a,b)=>b.r-a.r)[0];
-    if(topRev){document.getElementById("kpiPractTopRev").textContent=topRev.n;document.getElementById("kpiPractTopRevSub").textContent=fmtC(topRev.r)+" ر.س";}
+    if(topRev){document.getElementById("kpiPractTopRev").textContent=topRev.n;document.getElementById("kpiPractTopRevSub").textContent=fmtC(topRev.r)+" ر.س | "+fmt(topRev.c)+" زيارة | متوسط "+fmtC(topRev.avg)+" ر.س";}
 
     const topVis=pList.slice().sort((a,b)=>b.c-a.c)[0];
-    if(topVis){document.getElementById("kpiPractTopVis").textContent=topVis.n;document.getElementById("kpiPractTopVisSub").textContent=fmt(topVis.c)+" زيارة";}
+    if(topVis){document.getElementById("kpiPractTopVis").textContent=topVis.n;document.getElementById("kpiPractTopVisSub").textContent=fmt(topVis.c)+" زيارة | "+fmtC(topVis.r)+" ر.س | متوسط "+fmtC(topVis.avg)+" ر.س";}
 
-    // Best monthly growth
+    // Best monthly growth (excluding علاج طبيعي)
     if(mK.length>=2){
       const lastM=mK[mK.length-1],prevM=mK[mK.length-2];
+      const medNoPhysio=med.filter(d=>d.visit_type!=="علاج طبيعي");
       const growthList=pList.filter(p=>p.c>=3).map(p=>{
-        const pRev=med.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(prevM)).reduce((s,d)=>s+d.amount,0);
-        const lRev=med.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(lastM)).reduce((s,d)=>s+d.amount,0);
+        const pRev=medNoPhysio.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(prevM)).reduce((s,d)=>s+d.amount,0);
+        const lRev=medNoPhysio.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(lastM)).reduce((s,d)=>s+d.amount,0);
         return {n:p.n,pRev,lRev,growth:pRev>0?((lRev-pRev)/pRev*100):0};
       }).filter(g=>g.pRev>=500&&g.growth>0).sort((a,b)=>b.growth-a.growth);
       if(growthList.length){
