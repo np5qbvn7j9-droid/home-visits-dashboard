@@ -445,6 +445,8 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <div class="kpi-card kpi-green"><div class="kpi-label">المرضى المستفيدين (بدون تكرار)</div><div class="kpi-value" id="kpiVsUniqPatients">0</div><div class="kpi-sub" id="kpiVsUniqPatientsSub"></div></div>
   <div class="kpi-card kpi-orange"><div class="kpi-label">أكثر ممارس دخلاً</div><div class="kpi-value" id="kpiVsTopPractRev" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsTopPractRevSub"></div></div>
   <div class="kpi-card kpi-purple"><div class="kpi-label">أكثر ممارس زيارات</div><div class="kpi-value" id="kpiVsTopPractVis" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsTopPractVisSub"></div></div>
+  <div class="kpi-card kpi-green"><div class="kpi-label">أعلى متوسط فاتورة</div><div class="kpi-value" id="kpiVsHighAvg" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsHighAvgSub"></div></div>
+  <div class="kpi-card kpi-pink"><div class="kpi-label">أقل متوسط فاتورة</div><div class="kpi-value" id="kpiVsLowAvg" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsLowAvgSub"></div></div>
 </div>
 <div id="visitsAlertsWrap" class="alerts-wrap"></div>
 <div class="summary-card">
@@ -1137,6 +1139,10 @@ function render(){
     const _prByVis=Object.entries(_prG).sort((a,b)=>b[1].v-a[1].v)[0];
     if(_prByRev){document.getElementById("kpiVsTopPractRev").textContent=_prByRev[0];document.getElementById("kpiVsTopPractRevSub").textContent=fmtC(_prByRev[1].r)+" ر.س";}
     if(_prByVis){document.getElementById("kpiVsTopPractVis").textContent=_prByVis[0];document.getElementById("kpiVsTopPractVisSub").textContent=fmt(_prByVis[1].v)+" زيارة";}
+    // أعلى وأقل متوسط فاتورة (بدون علاج طبيعي، 5 زيارات فأكثر)
+    const _prAvg=Object.entries(_prG).filter(([,v])=>v.v>=5).map(([n,v])=>({n,avg:v.r/v.v,v:v.v,r:v.r})).sort((a,b)=>b.avg-a.avg);
+    if(_prAvg.length){const h=_prAvg[0];document.getElementById("kpiVsHighAvg").textContent=h.n;document.getElementById("kpiVsHighAvgSub").textContent=fmtC(h.avg)+" ر.س | "+fmt(h.v)+" زيارة | "+fmtC(h.r)+" إجمالي";}
+    if(_prAvg.length>1){const l=_prAvg[_prAvg.length-1];document.getElementById("kpiVsLowAvg").textContent=l.n;document.getElementById("kpiVsLowAvgSub").textContent=fmtC(l.avg)+" ر.س | "+fmt(l.v)+" زيارة | "+fmtC(l.r)+" إجمالي";}
   }
   /* ── Medical Visits Section ── */
   const vtG=grp(med,"visit_type");
