@@ -1090,8 +1090,8 @@ function render(){
     document.getElementById("kpiVsTotalVisits").textContent=fmt(_totV);
     document.getElementById("kpiVsTotalRev").textContent=fmtC(_totR);
     document.getElementById("kpiVsAvgRev").textContent=fmtC(_bill.length?rev(_bill)/_bill.length:0);
-    // أكثر نوع زيارة (تجاهل الفاضي والشرطة والعلاج الطبيعي)
-    const _vtG=grp(med.filter(d=>d.visit_type!=="علاج طبيعي"),"visit_type");
+    // أكثر نوع زيارة (تجاهل الفاضي والشرطة)
+    const _vtG=grp(med,"visit_type");
     const _vtTop=Object.entries(_vtG).filter(([k])=>k&&k!=="-"&&k.trim()!=="").sort((a,b)=>b[1].length-a[1].length)[0];
     if(_vtTop){document.getElementById("kpiVsTopType").textContent=_vtTop[0];document.getElementById("kpiVsTopTypeSub").textContent=fmt(_vtTop[1].length)+" زيارة ("+(_totV?(_vtTop[1].length/_totV*100).toFixed(0):0)+"%)";}
     // أنشط فرع (بدون علاج طبيعي)
