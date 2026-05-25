@@ -312,6 +312,7 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
       <div class="subtitle" id="headerSubtitle">جميع الأشهر</div>
       <div style="font-size:0.65rem;color:#475569;" id="lastDataDate"></div>
+      <div style="font-size:0.65rem;color:#475569;" id="lastEntryDate"></div>
     </div>
     <button class="btn-theme" id="btnTheme" onclick="toggleTheme()">🌙 غامق</button>
     <button class="btn-autolink" id="btnAutoLink" onclick="linkAutoFile()" title="ربط ملف Excel للتحديث التلقائي">
@@ -2189,7 +2190,9 @@ function _parseMatchesCSV(t){const R=_csvParse(t);if(R.length<2)return[];return 
 function _initDash(){
 {const lastDate=RAW.filter(d=>d.date).map(d=>d.date).sort().pop()||"";
  const el=document.getElementById("lastDataDate");
- if(el&&lastDate&&!el.dataset.synced)el.textContent="آخر تحديث: "+lastDate;}
+ if(el&&lastDate&&!el.dataset.synced)el.textContent="آخر تحديث: "+lastDate;
+ const el2=document.getElementById("lastEntryDate");
+ if(el2&&lastDate)el2.textContent="آخر تاريخ مضاف: "+lastDate;}
 buildPatientNameMap(RAW);
 populateFilters(RAW);applyFilters();
 }
