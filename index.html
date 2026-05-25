@@ -1140,8 +1140,6 @@ function render(){
     const _prG={};med.filter(d=>d.visit_type!=="علاج طبيعي").forEach(d=>{if(d.practitioner&&d.practitioner!=="-"){if(!_prG[d.practitioner])_prG[d.practitioner]={v:0,r:0};_prG[d.practitioner].v++;_prG[d.practitioner].r+=(d.amount||0);}});
     const _prByRev=Object.entries(_prG).sort((a,b)=>b[1].r-a[1].r)[0];
     const _prByVis=Object.entries(_prG).sort((a,b)=>b[1].v-a[1].v)[0];
-    if(_prByRev){document.getElementById("kpiVsTopPractRev").textContent=_prByRev[0];document.getElementById("kpiVsTopPractRevSub").textContent=fmtC(_prByRev[1].r)+" ر.س";}
-    if(_prByVis){document.getElementById("kpiVsTopPractVis").textContent=_prByVis[0];document.getElementById("kpiVsTopPractVisSub").textContent=fmt(_prByVis[1].v)+" زيارة";}
     // أعلى وأقل متوسط فاتورة (بدون علاج طبيعي، 5 زيارات فأكثر)
     const _prAvg=Object.entries(_prG).filter(([,v])=>v.v>=5).map(([n,v])=>({n,avg:v.r/v.v,v:v.v,r:v.r})).sort((a,b)=>b.avg-a.avg);
     if(_prAvg.length){const h=_prAvg[0];document.getElementById("kpiVsHighAvg").textContent=h.n;document.getElementById("kpiVsHighAvgSub").textContent=fmtC(h.avg)+" ر.س | "+fmt(h.v)+" زيارة | "+fmtC(h.r)+" إجمالي";}
