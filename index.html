@@ -1090,12 +1090,13 @@ function render(){
     document.getElementById("kpiVsTotalVisits").textContent=fmt(_totV);
     document.getElementById("kpiVsTotalRev").textContent=fmtC(_totR);
     document.getElementById("kpiVsAvgRev").textContent=fmtC(_bill.length?rev(_bill)/_bill.length:0);
-    // أكثر نوع زيارة (تجاهل الفاضي والشرطة)
-    const _vtG=grp(med,"visit_type");
+    // أكثر نوع زيارة (تجاهل الفاضي والشرطة والعلاج الطبيعي)
+    const _vtG=grp(med.filter(d=>d.visit_type!=="علاج طبيعي"),"visit_type");
     const _vtTop=Object.entries(_vtG).filter(([k])=>k&&k!=="-"&&k.trim()!=="").sort((a,b)=>b[1].length-a[1].length)[0];
     if(_vtTop){document.getElementById("kpiVsTopType").textContent=_vtTop[0];document.getElementById("kpiVsTopTypeSub").textContent=fmt(_vtTop[1].length)+" زيارة ("+(_totV?(_vtTop[1].length/_totV*100).toFixed(0):0)+"%)";}
-    // أنشط فرع
-    const _brG={};med.forEach(d=>{if(d.branch&&d.branch!=="-"){_brG[d.branch]=(_brG[d.branch]||0)+1;}});
+    // أنشط فرع (بدون علاج طبيعي)
+    const _brNoPhysio=med.filter(d=>d.visit_type!=="علاج طبيعي");
+    const _brG={};_brNoPhysio.forEach(d=>{if(d.branch&&d.branch!=="-"){_brG[d.branch]=(_brG[d.branch]||0)+1;}});
     const _brTop=Object.entries(_brG).sort((a,b)=>b[1]-a[1])[0];
     if(_brTop){document.getElementById("kpiVsTopBranch").textContent=_brTop[0].replace("عادل كير ","ع.ك ").replace("بلوديم ","ب.");document.getElementById("kpiVsTopBranchSub").textContent=fmt(_brTop[1])+" زيارة ("+(_totV?(_brTop[1]/_totV*100).toFixed(0):0)+"%)";}
     // معدل يومي
@@ -1130,8 +1131,8 @@ function render(){
     const _repeatCanon=Object.values(_ptCounts).filter(c=>c>=2).length;
     document.getElementById("kpiVsUniqPatients").textContent=fmt(_ptsCanon.size);
     document.getElementById("kpiVsUniqPatientsSub").textContent=fmt(_repeatCanon)+" متكرر";
-    // أكثر ممارس دخلاً
-    const _prG={};med.forEach(d=>{if(d.practitioner&&d.practitioner!=="-"){if(!_prG[d.practitioner])_prG[d.practitioner]={v:0,r:0};_prG[d.practitioner].v++;_prG[d.practitioner].r+=(d.amount||0);}});
+    // أكثر ممارس دخلاً (بدون علاج طبيعي)
+    const _prG={};med.filter(d=>d.visit_type!=="علاج طبيعي").forEach(d=>{if(d.practitioner&&d.practitioner!=="-"){if(!_prG[d.practitioner])_prG[d.practitioner]={v:0,r:0};_prG[d.practitioner].v++;_prG[d.practitioner].r+=(d.amount||0);}});
     const _prByRev=Object.entries(_prG).sort((a,b)=>b[1].r-a[1].r)[0];
     const _prByVis=Object.entries(_prG).sort((a,b)=>b[1].v-a[1].v)[0];
     if(_prByRev){document.getElementById("kpiVsTopPractRev").textContent=_prByRev[0];document.getElementById("kpiVsTopPractRevSub").textContent=fmtC(_prByRev[1].r)+" ر.س";}
