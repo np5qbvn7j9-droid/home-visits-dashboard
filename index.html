@@ -491,6 +491,12 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   5. أداء الممارسين
 ════════════════════════════════════════ -->
 <div class="section-title amber" id="sec-pract">أداء الممارسين</div>
+<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px;">
+  <div class="kpi-card kpi-blue"><div class="kpi-label">👨‍⚕️ الممارسين النشطين</div><div class="kpi-value" id="kpiPractActive">0</div><div class="kpi-sub" id="kpiPractActiveSub"></div></div>
+  <div class="kpi-card kpi-green"><div class="kpi-label">💰 أعلى ممارس دخلاً</div><div class="kpi-value" id="kpiPractTopRev" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiPractTopRevSub"></div></div>
+  <div class="kpi-card kpi-purple"><div class="kpi-label">📊 أعلى ممارس زيارات</div><div class="kpi-value" id="kpiPractTopVis" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiPractTopVisSub"></div></div>
+  <div class="kpi-card kpi-orange"><div class="kpi-label">🔥 أفضل نمو شهري</div><div class="kpi-value" id="kpiPractGrowth" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiPractGrowthSub"></div></div>
+</div>
 <div class="charts-grid">
   <div class="chart-card"><h3>أعلى 15 ممارس — الإيرادات وعدد الزيارات</h3><canvas id="chartTopPract" style="max-height:350px"></canvas></div>
   <div class="chart-card"><h3>الإيرادات الشهرية — أعلى 5 ممارسين</h3><canvas id="chartTop5Monthly"></canvas></div>
@@ -1369,6 +1375,38 @@ function render(){
     const topMonth=Object.entries(byMonth).sort((a,b)=>b[1]-a[1])[0];
     return {n,c:vs.length,r,avg:vs.length?r/vs.length:0,cash,tr,topVT:topVT?topVT[0]:"-",pct:visitRev?r/visitRev*100:0,topMonth:topMonth?MN[topMonth[0].split("-")[1]]||topMonth[0]:"-"};
   });
+  // Practitioner KPI cards
+  {
+    const activeCount=pList.length;
+    document.getElementById("kpiPractActive").textContent=fmt(activeCount);
+    const byBranch={};med.filter(d=>d.practitioner&&d.practitioner!=="-").forEach(d=>{const b=d.branch||"—";if(!byBranch[b])byBranch[b]=new Set();byBranch[b].add(d.practitioner);});
+    const branchSummary=Object.entries(byBranch).map(([b,s])=>b.replace("عادل كير ","").replace("بلوديم ","")+": "+s.size).join(" | ");
+    document.getElementById("kpiPractActiveSub").textContent=branchSummary;
+
+    const topRev=pList.slice().sort((a,b)=>b.r-a.r)[0];
+    if(topRev){document.getElementById("kpiPractTopRev").textContent=topRev.n;document.getElementById("kpiPractTopRevSub").textContent=fmtC(topRev.r)+" ر.س";}
+
+    const topVis=pList.slice().sort((a,b)=>b.c-a.c)[0];
+    if(topVis){document.getElementById("kpiPractTopVis").textContent=topVis.n;document.getElementById("kpiPractTopVisSub").textContent=fmt(topVis.c)+" زيارة";}
+
+    // Best monthly growth
+    if(mK.length>=2){
+      const lastM=mK[mK.length-1],prevM=mK[mK.length-2];
+      const growthList=pList.filter(p=>p.c>=3).map(p=>{
+        const pRev=med.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(prevM)).reduce((s,d)=>s+d.amount,0);
+        const lRev=med.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(lastM)).reduce((s,d)=>s+d.amount,0);
+        return {n:p.n,pRev,lRev,growth:pRev>0?((lRev-pRev)/pRev*100):0};
+      }).filter(g=>g.pRev>=500&&g.growth>0).sort((a,b)=>b.growth-a.growth);
+      if(growthList.length){
+        const g=growthList[0];
+        document.getElementById("kpiPractGrowth").textContent=g.n;
+        document.getElementById("kpiPractGrowthSub").textContent="↑ "+g.growth.toFixed(0)+"% ("+MN[lastM.split("-")[1]]+")";
+      } else {
+        document.getElementById("kpiPractGrowth").textContent="—";
+        document.getElementById("kpiPractGrowthSub").textContent="لا يوجد نمو ملحوظ";
+      }
+    }
+  }
   const top15=pList.slice().sort((a,b)=>b.r-a.r).slice(0,15);
   mk("chartTopPract","bar",{labels:top15.map(p=>p.n),
     datasets:[
