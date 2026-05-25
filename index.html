@@ -1945,15 +1945,12 @@ function renderVisitsAlerts(med, mK, vtG, medAll) {
   }
 
   const topRevType = Object.entries(vtGfilt).map(([n,vs])=>({n,r:vs.reduce((s,d)=>s+d.amount,0)})).sort((a,b2)=>b2.r-a.r)[0]||{n:"—",r:0};
-  const collectible = med.filter(d=>!EXEMPT.includes(d.visit_type));
-  const colRate = collectible.length?(collectible.filter(d=>d.amount>0).length/collectible.length*100).toFixed(1):100;
-  const colColor = parseFloat(colRate)>=80?"hi":parseFloat(colRate)>=60?"":"warn";
 
   document.getElementById("visitsSummary").innerHTML = [
     `سُجِّلت <span>${fmt(totalV)}</span> زيارة بإجمالي إيرادات <span>${fmtC(totalR)} ر.س</span> ومتوسط <span>${fmtC(avgPerVisit)} ر.س</span> للزيارة.${prevStat?` مقارنةً بـ${mnName(prevStat.m)}: الزيارات ${momV} والإيرادات ${momR}.`:""}`,
     brStats.length>1?`الفرع الأعلى نشاطاً <span>${topBrN.n}</span> بـ <span>${fmt(topBrN.v)}</span> زيارة، والأقل <span class="warn">${botBrN.n}</span> بـ <span>${fmt(botBrN.v)}</span> زيارة.`:"",
     `أعلى الأنواع إيراداً <span>${topRevType.n}</span> بـ <span>${fmtC(topRevType.r)} ر.س</span>. ${topGrowthTxt}`,
-    `نسبة التحصيل الفعلية <span class="${colColor}">${colRate}%</span> (باستثناء العلاج الطبيعي والعلاقات/التسويق).`
+    ``
   ].filter(Boolean).join(" ");
 }
 
