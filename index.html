@@ -2238,6 +2238,13 @@ function openDrillModal(type,key){
     kpisHtml=chip("إجمالي المباريات",fmtN(tot),"#a78bfa")+chip("إجمالي الإيرادات",fmtR(totR),"#34d399")+chip("متوسط المبلغ",fmtR(avg),"#38bdf8")+chip("الشهور",fmtN(months),"#fb923c")+chip("المواقع",fmtN(locs),"#f472b6")+chip("بدون إيراد",fmtN(zero),"#f87171");
     data.forEach(d=>{if(!d.date)return;const m=d.date.substring(0,7);if(!monthly[m])monthly[m]={v:0,r:0};monthly[m].v++;monthly[m].r+=(d.amount||0);});
     chartLabel="المباريات";chartColor="#a78bfa";
+    // Category breakdown
+    const catG={};data.forEach(d=>{const k=d.category||"—";if(!catG[k])catG[k]={c:0,r:0};catG[k].c++;catG[k].r+=(d.amount||0);});
+    const catRows=Object.entries(catG).sort((a,b)=>b[1].r-a[1].r);
+    if(catRows.length) extraHtml=`<div style="font-size:0.62rem;font-weight:700;color:var(--text-muted);margin-bottom:4px;letter-spacing:0.02em">الفئات</div>`
+      +`<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:right;padding:2px 4px;color:var(--text-muted);font-size:0.58rem;font-weight:600">الفئة</th><th style="text-align:center;padding:2px 4px;color:var(--text-muted);font-size:0.58rem;font-weight:600">#</th><th style="text-align:center;padding:2px 4px;color:var(--text-muted);font-size:0.58rem;font-weight:600">إيراد</th></tr></thead><tbody>`
+      +catRows.map(([n,v])=>`<tr style="border-bottom:1px solid var(--border-row)"><td style="padding:2px 4px;color:var(--text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px">${n}</td><td style="padding:2px 4px;text-align:center;color:#a78bfa;font-weight:700">${v.c}</td><td style="padding:2px 4px;text-align:center;color:#34d399">${Math.round(v.r).toLocaleString("ar-SA")}</td></tr>`).join("")
+      +`<tr style="border-top:1px solid var(--border);font-weight:700;background:rgba(52,211,153,0.06)"><td style="padding:2px 4px;color:#34d399">المجموع</td><td style="padding:2px 4px;text-align:center;color:#a78bfa">${tot}</td><td style="padding:2px 4px;text-align:center;color:#34d399">${Math.round(totR).toLocaleString("ar-SA")}</td></tr></tbody></table>`;
   }
 
   document.getElementById("drillModalTitle").textContent=title;
