@@ -54,16 +54,16 @@ body{
   position:fixed;bottom:0;left:0;right:0;z-index:200;
   background:var(--card);border-top:1px solid var(--border);
   display:flex;justify-content:space-around;align-items:center;
-  padding:10px 0 calc(10px + env(safe-area-inset-bottom));
+  padding:6px 0 calc(6px + env(safe-area-inset-bottom));
   transform:translateZ(0);-webkit-transform:translateZ(0);
 }
 .nav-item{
   display:flex;flex-direction:column;align-items:center;gap:2px;
   padding:4px 6px;border-radius:10px;cursor:pointer;transition:all .2s;
-  font-size:11px;color:var(--text2);min-width:48px;
+  font-size:9px;color:var(--text2);min-width:48px;
 }
 .nav-item.active{color:var(--accent2);}
-.nav-item .icon{font-size:22px;line-height:1;}
+.nav-item .icon{font-size:20px;line-height:1;}
 .nav-item .label{font-weight:600;}
 .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
 .kpi-card{
