@@ -39,11 +39,7 @@ body{font-family:"Cairo",sans-serif;background:var(--bg-base);color:var(--text-m
 .subtitle{color:var(--text-sub);font-size:0.82rem;}
 .btn-upload{background:linear-gradient(135deg,#0ea5e9,#0284c7);border:none;color:white;padding:7px 16px;border-radius:8px;font-family:"Cairo";font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.3s;}
 .btn-upload:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,165,233,0.4);}
-.btn-autolink{background:var(--bg-card);border:1px solid var(--border);color:var(--text-sub);padding:5px 12px;border-radius:8px;font-family:"Cairo";font-weight:700;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.2s;}
-.btn-autolink:hover{border-color:#34d399;color:#34d399;}
-.btn-autolink.linked{border-color:#34d399;color:#34d399;background:rgba(52,211,153,0.08);}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-.btn-autolink.syncing svg{animation:pulse 1s infinite;}
 /* Theme toggle */
 .btn-theme{background:var(--bg-card);border:1px solid var(--border);color:var(--text-sub);padding:6px 11px;border-radius:8px;font-family:"Cairo";font-size:0.8rem;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
 .btn-theme:hover{border-color:#38bdf8;color:#38bdf8;}
@@ -315,11 +311,6 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
       <div style="font-size:0.65rem;color:#475569;" id="lastEntryDate"></div>
     </div>
     <button class="btn-theme" id="btnTheme" onclick="toggleTheme()">🌙 غامق</button>
-    <button class="btn-autolink" id="btnAutoLink" onclick="linkAutoFile()" title="ربط ملف Excel للتحديث التلقائي">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-      <span id="autoLinkLabel">ربط تلقائي</span>
-    </button>
-    <div id="autoStatus" style="display:none;font-size:0.62rem;color:#34d399;white-space:nowrap;align-items:center;gap:4px;"></div>
     <button class="btn-upload" onclick="document.getElementById('uploadModal').classList.add('open')">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       تحديث البيانات
@@ -2049,75 +2040,6 @@ function confirmUpload(){
   reader.readAsArrayBuffer(pendingFile);
 }
 
-/* ── الربط التلقائي (Chrome + Safari) ── */
-let _autoHandle=null, _autoTimer=null;
-const _hasFilePicker=!!window.showOpenFilePicker;
-const _isLocalServer=location.protocol==="http:"&&(location.hostname==="localhost"||location.hostname==="127.0.0.1");
-
-function _unlinkAuto(){
-  _autoHandle=null;clearInterval(_autoTimer);_autoTimer=null;
-  const btn=document.getElementById("btnAutoLink");
-  btn.classList.remove("linked");
-  document.getElementById("autoLinkLabel").textContent="ربط تلقائي";
-  document.getElementById("autoStatus").style.display="none";
-}
-
-function _showLinked(label){
-  const btn=document.getElementById("btnAutoLink");
-  btn.classList.add("linked");
-  document.getElementById("autoLinkLabel").textContent="✓ "+label;
-  const statusEl=document.getElementById("autoStatus");
-  const t=new Date().toLocaleTimeString("ar-SA",{hour:"2-digit",minute:"2-digit"});
-  statusEl.style.display="flex";
-  statusEl.innerHTML=`🔄 آخر تحديث ${t} (تلقائي كل دقيقة)`;
-}
-
-async function linkAutoFile(){
-  if(_autoHandle){_unlinkAuto();return;}
-
-  if(_hasFilePicker){
-    try{
-      const [handle]=await window.showOpenFilePicker({
-        types:[{description:"Excel",accept:{"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":[".xlsx",".xls"]}}],
-        multiple:false
-      });
-      _autoHandle=handle;
-      await autoRefresh();
-      _autoTimer=setInterval(autoRefresh,60000);
-    }catch(e){if(e.name!=="AbortError")alert("خطأ: "+e.message);}
-  } else if(_isLocalServer){
-    _autoHandle="server";
-    await autoRefresh();
-    _autoTimer=setInterval(autoRefresh,60000);
-  } else {
-    alert("لتفعيل الربط التلقائي:\n\n1. شغّل السيرفر: python3 server.py\n2. افتح http://localhost:8765\n\nأو استخدم متصفح Chrome للربط المباشر.");
-  }
-}
-
-async function autoRefresh(){
-  if(!_autoHandle)return;
-  const btn=document.getElementById("btnAutoLink");
-  btn.classList.add("syncing");
-  try{
-    if(_autoHandle==="server"){
-      const res=await fetch("/excel-data",{cache:"no-store"});
-      if(!res.ok) throw new Error("الملف غير موجود على السيرفر");
-      const buffer=await res.arrayBuffer();
-      processBuffer(buffer,true);
-      _showLinked("ملف مرتبط");
-    } else {
-      const file=await _autoHandle.getFile();
-      const buffer=await file.arrayBuffer();
-      processBuffer(buffer,true);
-      _showLinked(file.name.replace(/\.xlsx?$/i,""));
-    }
-  }catch(e){
-    const statusEl=document.getElementById("autoStatus");
-    statusEl.style.display="flex";
-    statusEl.innerHTML=`<span style="color:#f87171">⚠ ${e.message||"خطأ في القراءة"}</span>`;
-  }
-  btn.classList.remove("syncing");
-}
 function closeModal(){
   document.getElementById("uploadModal").classList.remove("open");pendingFile=null;fileInput.value="";
   document.getElementById("selectedFilename").style.display="none";
