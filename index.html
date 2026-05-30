@@ -366,7 +366,7 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
 <div class="kpi-grid">
   <div class="kpi-card kpi-blue"><div class="kpi-label">إجمالي الزيارات</div><div class="kpi-value" id="kpiVisits">0</div><div class="kpi-sub" id="kpiVisitsSub"></div><div class="kpi-delta" id="kpiVisitsDelta"></div></div>
   <div class="kpi-card kpi-green"><div class="kpi-label">إجمالي الإيرادات (ر.س)</div><div class="kpi-value" id="kpiRevenue">0</div><div class="kpi-sub" id="kpiRevenueSub"></div><div class="kpi-delta" id="kpiRevenueDelta"></div></div>
-  <div class="kpi-card kpi-purple"><div class="kpi-label">متوسط المبلغ / زيارة</div><div class="kpi-value" id="kpiAvg">0</div><div class="kpi-sub" id="kpiAvgSub"></div><div class="kpi-delta" id="kpiAvgDelta"></div></div>
+  <div class="kpi-card kpi-purple"><div class="kpi-label">متوسط المبلغ / زيارة</div><div class="kpi-value" id="kpiAvg">0</div><div class="kpi-sub" id="kpiAvgSub"></div><div class="kpi-delta" id="kpiAvgDelta"></div><div class="kpi-sub" style="font-size:0.55rem;color:#94a3b8;margin-top:2px">باستثناء العلاقات/التسويق</div></div>
   <div class="kpi-card kpi-orange"><div class="kpi-label">عدد الممارسين النشطين</div><div class="kpi-value" id="kpiPract">0</div><div class="kpi-delta" id="kpiPractDelta"></div></div>
   <div class="kpi-card kpi-teal"><div class="kpi-label">عدد الأيام النشطة</div><div class="kpi-value" id="kpiActiveDays">0</div><div class="kpi-sub" id="kpiActiveDaysSub"></div><div class="kpi-delta" id="kpiActiveDaysDelta"></div></div>
 </div>
@@ -431,12 +431,12 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   <div class="kpi-card kpi-green"><div class="kpi-label">إجمالي الإيرادات</div><div class="kpi-value" id="kpiVsTotalRev">0</div></div>
   <div class="kpi-card kpi-orange"><div class="kpi-label">متوسط الإيراد/زيارة</div><div class="kpi-value" id="kpiVsAvgRev">0</div></div>
   <div class="kpi-card kpi-purple"><div class="kpi-label">أكثر نوع زيارة</div><div class="kpi-value" id="kpiVsTopType" style="font-size:0.9rem">—</div><div class="kpi-sub" id="kpiVsTopTypeSub"></div></div>
-  <div class="kpi-card kpi-pink"><div class="kpi-label">أنشط فرع</div><div class="kpi-value" id="kpiVsTopBranch" style="font-size:0.9rem">—</div><div class="kpi-sub" id="kpiVsTopBranchSub"></div></div>
+  <div class="kpi-card kpi-pink"><div class="kpi-label">أنشط فرع</div><div class="kpi-value" id="kpiVsTopBranch" style="font-size:0.9rem">—</div><div class="kpi-sub" id="kpiVsTopBranchSub"></div><div class="kpi-sub" style="font-size:0.55rem;color:#94a3b8;margin-top:2px">باستثناء العلاج الطبيعي</div></div>
   <div class="kpi-card kpi-yellow"><div class="kpi-label">معدل الزيارات اليومي</div><div class="kpi-value" id="kpiVsDailyRate">0</div><div class="kpi-sub" id="kpiVsDailyRateSub"></div></div>
   <div class="kpi-card kpi-blue"><div class="kpi-label">ساعة الذروة</div><div class="kpi-value" id="kpiVsPeakHour">—</div><div class="kpi-sub" id="kpiVsPeakHourSub"></div></div>
   <div class="kpi-card kpi-green"><div class="kpi-label">المرضى المستفيدين (بدون تكرار)</div><div class="kpi-value" id="kpiVsUniqPatients">0</div><div class="kpi-sub" id="kpiVsUniqPatientsSub"></div></div>
-  <div class="kpi-card kpi-green"><div class="kpi-label">🏢 أعلى فرع إيراداً</div><div class="kpi-value" id="kpiVsTopBranchRev" style="font-size:0.9rem">—</div><div class="kpi-sub" id="kpiVsTopBranchRevSub"></div></div>
-  <div class="kpi-card kpi-pink"><div class="kpi-label">📉 أقل فرع إيراداً</div><div class="kpi-value" id="kpiVsLowBranchRev" style="font-size:0.9rem">—</div><div class="kpi-sub" id="kpiVsLowBranchRevSub"></div></div>
+  <div class="kpi-card kpi-green"><div class="kpi-label">🏢 أعلى فرع إيراداً</div><div class="kpi-value" id="kpiVsTopBranchRev" style="font-size:0.9rem">—</div><div class="kpi-sub" id="kpiVsTopBranchRevSub"></div><div class="kpi-sub" style="font-size:0.55rem;color:#94a3b8;margin-top:2px">باستثناء العلاج الطبيعي</div></div>
+  <div class="kpi-card kpi-pink"><div class="kpi-label">📉 أقل فرع إيراداً</div><div class="kpi-value" id="kpiVsLowBranchRev" style="font-size:0.9rem">—</div><div class="kpi-sub" id="kpiVsLowBranchRevSub"></div><div class="kpi-sub" style="font-size:0.55rem;color:#94a3b8;margin-top:2px">باستثناء العلاج الطبيعي</div></div>
 </div>
 <div id="visitsAlertsWrap" class="alerts-wrap"></div>
 <div class="summary-card">
@@ -491,11 +491,11 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
 <div class="section-title amber" id="sec-pract">أداء الممارسين</div>
 <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px;">
   <div class="kpi-card kpi-blue"><div class="kpi-label">👨‍⚕️ الممارسين النشطين</div><div class="kpi-value" id="kpiPractActive">0</div><div class="kpi-sub" id="kpiPractActiveSub"></div></div>
-  <div class="kpi-card kpi-green"><div class="kpi-label">💰 أعلى ممارس دخلاً</div><div class="kpi-value" id="kpiPractTopRev" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiPractTopRevSub"></div></div>
-  <div class="kpi-card kpi-purple"><div class="kpi-label">📊 أعلى ممارس زيارات</div><div class="kpi-value" id="kpiPractTopVis" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiPractTopVisSub"></div></div>
-  <div class="kpi-card kpi-orange"><div class="kpi-label">🔥 أفضل نمو شهري</div><div class="kpi-value" id="kpiPractGrowth" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiPractGrowthSub"></div></div>
-  <div class="kpi-card kpi-green"><div class="kpi-label">أعلى متوسط فاتورة</div><div class="kpi-value" id="kpiVsHighAvg" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsHighAvgSub"></div></div>
-  <div class="kpi-card kpi-pink"><div class="kpi-label">أقل متوسط فاتورة</div><div class="kpi-value" id="kpiVsLowAvg" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsLowAvgSub"></div></div>
+  <div class="kpi-card kpi-green"><div class="kpi-label">💰 أعلى ممارس دخلاً</div><div class="kpi-value" id="kpiPractTopRev" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiPractTopRevSub"></div><div class="kpi-sub" style="font-size:0.55rem;color:#94a3b8;margin-top:2px">باستثناء العلاج الطبيعي</div></div>
+  <div class="kpi-card kpi-purple"><div class="kpi-label">📊 أعلى ممارس زيارات</div><div class="kpi-value" id="kpiPractTopVis" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiPractTopVisSub"></div><div class="kpi-sub" style="font-size:0.55rem;color:#94a3b8;margin-top:2px">باستثناء العلاج الطبيعي</div></div>
+  <div class="kpi-card kpi-orange"><div class="kpi-label">🔥 أفضل نمو شهري</div><div class="kpi-value" id="kpiPractGrowth" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiPractGrowthSub"></div><div class="kpi-sub" style="font-size:0.55rem;color:#94a3b8;margin-top:2px">باستثناء العلاج الطبيعي</div></div>
+  <div class="kpi-card kpi-green"><div class="kpi-label">أعلى متوسط فاتورة</div><div class="kpi-value" id="kpiVsHighAvg" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsHighAvgSub"></div><div class="kpi-sub" style="font-size:0.55rem;color:#94a3b8;margin-top:2px">باستثناء العلاج الطبيعي · 5 زيارات فأكثر</div></div>
+  <div class="kpi-card kpi-pink"><div class="kpi-label">أقل متوسط فاتورة</div><div class="kpi-value" id="kpiVsLowAvg" style="font-size:0.85rem">—</div><div class="kpi-sub" id="kpiVsLowAvgSub"></div><div class="kpi-sub" style="font-size:0.55rem;color:#94a3b8;margin-top:2px">باستثناء العلاج الطبيعي · 5 زيارات فأكثر</div></div>
 </div>
 <div class="charts-grid">
   <div class="chart-card"><h3>أعلى 15 ممارس — الإيرادات وعدد الزيارات</h3><canvas id="chartTopPract" style="max-height:350px"></canvas></div>
