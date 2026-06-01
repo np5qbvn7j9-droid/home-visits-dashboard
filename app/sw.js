@@ -1,4 +1,4 @@
-const CACHE_NAME = 'home-visits-v5';
+const CACHE_NAME = 'home-visits-v6';
 const ASSETS = [
   './manifest.json',
   './icon-192.svg',
