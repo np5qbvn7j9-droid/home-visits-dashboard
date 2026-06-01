@@ -1187,15 +1187,17 @@ function render(){
     <td style="font-weight:800;color:#94a3b8">100%</td>
   </tr>`;}
 
-  /* ── Extra Visits Analytics ── */
+  /* ── Extra Visits Analytics (ثابتة — كل الأشهر بدون تأثر بالفلتر) ── */
+  const _allMedV=RAW.filter(d=>!SPECIAL.includes(d.visit_type));
+  const _allMKv=[...new Set(_allMedV.filter(d=>d.date).map(d=>d.date.substring(0,7)))].sort();
   // 1. Visit types by month (stacked bar)
   {
-    const vtTypes=[...new Set(med.map(d=>d.visit_type))].sort();
+    const vtTypes=[...new Set(_allMedV.map(d=>d.visit_type))].sort();
     mk("chartVisitTypeMonth","bar",{
-      labels:mK.map(m=>MN[m.split("-")[1]]||m),
+      labels:_allMKv.map(m=>MN[m.split("-")[1]]||m),
       datasets:vtTypes.map((t,i)=>({
         label:t, borderRadius:3,
-        data:mK.map(m=>med.filter(d=>d.date&&d.date.startsWith(m)&&d.visit_type===t).length),
+        data:_allMKv.map(m=>_allMedV.filter(d=>d.date&&d.date.startsWith(m)&&d.visit_type===t).length),
         backgroundColor:C[i%C.length]
       }))
     },{plugins:{legend:{labels:{color:lc(),font:{family:"Cairo",size:10}}}},
@@ -1203,12 +1205,12 @@ function render(){
   }
   // 2. Branch visits by month (stacked bar)
   {
-    const branches=[...new Set(med.map(d=>d.branch).filter(b=>b&&b!=="-"))].sort();
+    const branches=[...new Set(_allMedV.map(d=>d.branch).filter(b=>b&&b!=="-"))].sort();
     mk("chartBranchMonth","bar",{
-      labels:mK.map(m=>MN[m.split("-")[1]]||m),
+      labels:_allMKv.map(m=>MN[m.split("-")[1]]||m),
       datasets:branches.map((b,i)=>({
         label:b.replace("عادل كير ","").replace("بلوديم ",""),borderRadius:3,
-        data:mK.map(m=>med.filter(d=>d.date&&d.date.startsWith(m)&&d.branch===b).length),
+        data:_allMKv.map(m=>_allMedV.filter(d=>d.date&&d.date.startsWith(m)&&d.branch===b).length),
         backgroundColor:C[i%C.length]
       }))
     },{plugins:{legend:{labels:{color:lc(),font:{family:"Cairo",size:10}}}},
@@ -1235,18 +1237,19 @@ function render(){
     }).join("");
   }
 
-  // 8. Visit type growth — full monthly columns
+  // 8. Visit type growth — full monthly columns (ثابت — كل الأشهر بدون تأثر بالفلتر)
   {
     const EXEMPT_G=["العلاقات/التسويق"];
-    const vtForGrowth=vtSorted.map(d=>d.n).filter(t=>!EXEMPT_G.includes(t));
-    if(mK.length&&vtForGrowth.length){
+    const vtForGrowth=[...new Set(_allMedV.map(d=>d.visit_type))].filter(t=>!EXEMPT_G.includes(t)&&t&&t!=="-").sort((a,b)=>{
+      const ac=_allMedV.filter(d=>d.visit_type===a).length,bc=_allMedV.filter(d=>d.visit_type===b).length;return bc-ac;});
+    if(_allMKv.length&&vtForGrowth.length){
       // Header
       document.getElementById("growthHead").innerHTML=
         `<tr><th style="text-align:right;white-space:nowrap">نوع الزيارة</th>`+
-        mK.map(m=>`<th style="text-align:center;white-space:nowrap">${MN[m.split("-")[1]]||m}</th>`).join("")+
+        _allMKv.map(m=>`<th style="text-align:center;white-space:nowrap">${MN[m.split("-")[1]]||m}</th>`).join("")+
         `<th style="text-align:center">الإجمالي</th><th style="text-align:center">الاتجاه</th></tr>`;
       // Build all counts first for global max
-      const allCounts=vtForGrowth.map(t=>mK.map(m=>med.filter(d=>d.date&&d.date.startsWith(m)&&d.visit_type===t).length));
+      const allCounts=vtForGrowth.map(t=>_allMKv.map(m=>_allMedV.filter(d=>d.date&&d.date.startsWith(m)&&d.visit_type===t).length));
       const globalMax=Math.max(...allCounts.flat(),1);
       const heatBg=v=>{
         if(!v)return"transparent";
@@ -1265,6 +1268,7 @@ function render(){
       document.getElementById("growthBody").innerHTML=vtForGrowth.map((t,ri)=>{
         const counts=allCounts[ri];
         const total=counts.reduce((s,v)=>s+v,0);
+        const nonZeroMonths=counts.filter(v=>v>0).length;
         const nonZeroIdx=counts.map((v,i)=>v>0?i:-1).filter(i=>i>=0);
         const firstIdx=nonZeroIdx[0]??0, lastIdx=nonZeroIdx[nonZeroIdx.length-1]??counts.length-1;
         const first=counts[firstIdx]||0, last=counts[lastIdx]||0;
