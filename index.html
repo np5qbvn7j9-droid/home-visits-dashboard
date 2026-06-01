@@ -1386,10 +1386,13 @@ function render(){
     const branchSummary=Object.entries(byBranch).map(([b,s])=>b.replace("عادل كير ","").replace("بلوديم ","")+": "+s.size).join(" | ");
     document.getElementById("kpiPractActiveSub").textContent=branchSummary;
 
-    const topRev=pList.slice().sort((a,b)=>b.r-a.r)[0];
+    // أعلى ممارس دخلاً وزيارات (بدون علاج طبيعي)
+    const pGnoP=grp(med.filter(d=>d.visit_type!=="علاج طبيعي"),"practitioner");delete pGnoP["-"];
+    const pListNoP=Object.entries(pGnoP).map(([n,vs])=>({n,c:vs.length,r:rev(vs),avg:vs.length?rev(vs)/vs.length:0}));
+    const topRev=pListNoP.slice().sort((a,b)=>b.r-a.r)[0];
     if(topRev){document.getElementById("kpiPractTopRev").textContent=topRev.n;document.getElementById("kpiPractTopRevSub").textContent=fmtC(topRev.r)+" ر.س | "+fmt(topRev.c)+" زيارة | متوسط "+fmtC(topRev.avg)+" ر.س";}
 
-    const topVis=pList.slice().sort((a,b)=>b.c-a.c)[0];
+    const topVis=pListNoP.slice().sort((a,b)=>b.c-a.c)[0];
     if(topVis){document.getElementById("kpiPractTopVis").textContent=topVis.n;document.getElementById("kpiPractTopVisSub").textContent=fmt(topVis.c)+" زيارة | "+fmtC(topVis.r)+" ر.س | متوسط "+fmtC(topVis.avg)+" ر.س";}
 
     // Best monthly growth (excluding علاج طبيعي)
