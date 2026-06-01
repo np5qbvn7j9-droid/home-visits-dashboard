@@ -836,7 +836,7 @@ function render(){
     document.querySelectorAll("tfoot").forEach(tf=>tf.innerHTML="");
     document.querySelectorAll(".kpi-value").forEach(el=>el.textContent="—");
     document.querySelectorAll(".kpi-sub,.kpi-delta").forEach(el=>el.textContent="");
-    ["visitsSummary","momCompareGrid","heatmapWrap","matchAlertsWrap","visitsAlertsWrap","dayCardsGrid","overviewAlertsWrap"].forEach(id=>{
+    ["visitsSummary","momCompareGrid","matchAlertsWrap","visitsAlertsWrap","dayCardsGrid","overviewAlertsWrap"].forEach(id=>{
       const el=document.getElementById(id);if(el)el.innerHTML="";
     });
     return;
@@ -849,7 +849,7 @@ function render(){
     document.querySelectorAll("tbody:not(#matchBody):not(#matchMonthBody)").forEach(tb=>tb.innerHTML="");
     document.querySelectorAll(".kpi-value").forEach(el=>el.textContent="—");
     document.querySelectorAll(".kpi-sub,.kpi-delta").forEach(el=>el.textContent="");
-    ["visitsSummary","momCompareGrid","heatmapWrap","visitsAlertsWrap","dayCardsGrid","overviewAlertsWrap"].forEach(id=>{
+    ["visitsSummary","momCompareGrid","visitsAlertsWrap","dayCardsGrid","overviewAlertsWrap"].forEach(id=>{
       const el=document.getElementById(id);if(el)el.innerHTML="";
     });
     // إيرادات المباريات في KPIs النظرة العامة
@@ -1440,9 +1440,13 @@ function render(){
      scales:{x:{title:{display:true,text:"عدد الزيارات",color:lc(),font:{family:"Cairo"}},ticks:{color:lc()},grid:gridCfg},
              y:{title:{display:true,text:"الإيرادات",color:lc(),font:{family:"Cairo"}},ticks:{color:lc()},grid:gridCfg}}});
 
-  /* Heatmap */
-  const top15h=pList.slice().sort((a,b)=>b.r-a.r).slice(0,15);
-  const maxCell=Math.max(...top15h.flatMap(p=>mK.map(m=>med.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(m)).reduce((s,d)=>s+d.amount,0))));
+  /* Heatmap — ثابت لجميع الأشهر بدون تأثر بالفلتر */
+  const allMed=RAW.filter(d=>!SPECIAL.includes(d.visit_type));
+  const allMK=[...new Set(allMed.filter(d=>d.date).map(d=>d.date.substring(0,7)))].sort();
+  const hpG=grp(allMed,"practitioner");delete hpG["-"];
+  const hpList=Object.entries(hpG).map(([n,vs])=>({n,c:vs.length,r:rev(vs),avg:vs.length?rev(vs)/vs.length:0}));
+  const top15h=hpList.slice().sort((a,b)=>b.r-a.r).slice(0,15);
+  const maxCell=Math.max(...top15h.flatMap(p=>allMK.map(m=>allMed.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(m)).reduce((s,d)=>s+d.amount,0))));
   function heatColor(val,mx){
     const li=isLight();
     if(!val||!mx)return li?"background:#f1f5f9;color:#94a3b8":"background:#1a2540;color:#475569";
@@ -1453,11 +1457,11 @@ function render(){
     if(p>0.2)return li?"background:rgba(56,189,248,0.25);color:#0f172a":"background:rgba(56,189,248,0.3);color:#e2e8f0";
     return li?"background:rgba(56,189,248,0.1);color:#334155":"background:rgba(56,189,248,0.12);color:#64748b";
   }
-  let tbl=`<table class="matrix-table"><thead><tr><th class="row-head">الممارس</th>${mK.map(m=>`<th>${MN[m.split("-")[1]]||m}</th>`).join("")}<th style="min-width:90px">الإجمالي</th></tr></thead><tbody>`;
+  let tbl=`<table class="matrix-table"><thead><tr><th class="row-head">الممارس</th>${allMK.map(m=>`<th>${MN[m.split("-")[1]]||m}</th>`).join("")}<th style="min-width:90px">الإجمالي</th></tr></thead><tbody>`;
   top15h.forEach(p=>{
     tbl+=`<tr><td>${p.n}</td>`;
-    mK.forEach(m=>{
-      const vis=med.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(m));
+    allMK.forEach(m=>{
+      const vis=allMed.filter(d=>d.practitioner===p.n&&d.date&&d.date.startsWith(m));
       const r=vis.reduce((s,d)=>s+d.amount,0);
       const cnt=vis.length;
       const avg=cnt?Math.round(r/cnt):0;
