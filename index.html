@@ -2189,7 +2189,7 @@ function openPractModal(name){
     const mn=m.split("-");
     return `<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border-row);padding:4px 0">
       <span style="color:var(--text-sub)">${MN[mn[1]]||m}</span>
-      <span style="font-weight:600">${fmt(v.c)} زيارة &nbsp;·&nbsp; ${fmtC(v.r)} ر.س &nbsp;·&nbsp; <span style="color:#a78bfa">∅ ${fmtC(v.c?v.r/v.c:0)}</span></span>
+      <span style="font-weight:600">${fmt(v.c)} زيارة &nbsp;·&nbsp; <span style="color:#34d399">${fmtC(v.r)} ر.س</span> &nbsp;·&nbsp; <span style="color:#a78bfa">∅ ${fmtC(v.c?v.r/v.c:0)}</span></span>
     </div>`;
   }).join("");
   // Recent visits (last 5)
