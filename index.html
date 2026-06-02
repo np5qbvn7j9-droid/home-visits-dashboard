@@ -1064,17 +1064,21 @@ function render(){
   /* Branch monthly stacked — fd (شامل مباراة) */
   const branches=Object.keys(brG0).sort();
   const brColors={"عادل كير الإسكان":"#38bdf8","عادل كير الشرق":"#34d399","عادل كير الشمال":"#a78bfa","بلوديم الأفق":"#fb923c","بلوديم الزرقاء":"#f472b6"};
-  mk("chartRevBranchMonth","bar",{labels:mK.map(m=>MN[m.split("-")[1]]||m),
-    datasets:branches.map((br,i)=>({label:br.replace("عادل كير ","ع.ك ").replace("بلوديم ","ب."),
-      data:mK.map(m=>fd.filter(d=>d.branch===br&&d.date&&d.date.startsWith(m)).reduce((s,d)=>s+d.amount,0)),
+  /* ثابت — كل الأشهر بدون تأثر بالفلتر */
+  const _allFd=RAW;
+  const _allFdMK=[...new Set(_allFd.filter(d=>d.date).map(d=>d.date.substring(0,7)))].sort();
+  const _allBranches=[...new Set(_allFd.map(d=>d.branch).filter(b=>b&&b!=="-"))].sort();
+  mk("chartRevBranchMonth","bar",{labels:_allFdMK.map(m=>MN[m.split("-")[1]]||m),
+    datasets:_allBranches.map((br,i)=>({label:br.replace("عادل كير ","ع.ك ").replace("بلوديم ","ب."),
+      data:_allFdMK.map(m=>_allFd.filter(d=>d.branch===br&&d.date&&d.date.startsWith(m)).reduce((s,d)=>s+d.amount,0)),
       backgroundColor:brColors[br]||C[i],borderRadius:3,stack:"b"}))
   },{plugins:{legend:legendCfg()},scales:{x:{ticks:xTicks(),grid:{display:false},stacked:true},y:{ticks:{color:lc()},grid:gridCfg,stacked:true}}});
 
-  /* Payment monthly stacked — fd (شامل مباراة) */
-  mk("chartRevPaymentMonth","bar",{labels:mK.map(m=>MN[m.split("-")[1]]||m),
+  /* Payment monthly stacked — ثابت لجميع الأشهر */
+  mk("chartRevPaymentMonth","bar",{labels:_allFdMK.map(m=>MN[m.split("-")[1]]||m),
     datasets:[
-      {label:"كاش",data:mK.map(m=>fd.filter(d=>d.payment==="كاش"&&d.date&&d.date.startsWith(m)).reduce((s,d)=>s+d.amount,0)),backgroundColor:"#34d399",borderRadius:3,stack:"p"},
-      {label:"تحويل",data:mK.map(m=>fd.filter(d=>d.payment==="تحويل"&&d.date&&d.date.startsWith(m)).reduce((s,d)=>s+d.amount,0)),backgroundColor:"#a78bfa",borderRadius:3,stack:"p"}
+      {label:"كاش",data:_allFdMK.map(m=>_allFd.filter(d=>d.payment==="كاش"&&d.date&&d.date.startsWith(m)).reduce((s,d)=>s+d.amount,0)),backgroundColor:"#34d399",borderRadius:3,stack:"p"},
+      {label:"تحويل",data:_allFdMK.map(m=>_allFd.filter(d=>d.payment==="تحويل"&&d.date&&d.date.startsWith(m)).reduce((s,d)=>s+d.amount,0)),backgroundColor:"#a78bfa",borderRadius:3,stack:"p"}
     ]
   },{plugins:{legend:legendCfg()},scales:{x:{ticks:xTicks(),grid:{display:false},stacked:true},y:{ticks:{color:lc()},grid:gridCfg,stacked:true}}});
 
