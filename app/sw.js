@@ -1,4 +1,4 @@
-const CACHE_NAME = 'home-visits-v6';
+const CACHE_NAME = 'home-visits-v7';
 const ASSETS = [
   './manifest.json',
   './icon-192.svg',
@@ -22,6 +22,11 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  // Always network for Google Sheets data (never cache)
+  if (url.hostname.includes('google.com') || url.hostname.includes('googleapis.com')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
   // Network-first for HTML pages (so data updates are always fresh)
   if (e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/')) {
     e.respondWith(
