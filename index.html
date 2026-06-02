@@ -988,20 +988,28 @@ function render(){
    }
   }
 
-  /* Monthly trend */
+  /* Monthly trend — ثابت لجميع الأشهر بدون تأثر بالفلتر */
+  const _allRaw=RAW.filter(d=>!SPECIAL.includes(d.visit_type));
+  const _allMatch=MATCHES_RAW;
+  const monthlyAll={};
+  _allRaw.forEach(d=>{if(!d.date)return;const m=d.date.substring(0,7);if(!monthlyAll[m])monthlyAll[m]={v:0,r:0};monthlyAll[m].v++;monthlyAll[m].r+=d.amount;});
+  _allMatch.forEach(d=>{if(!d.date)return;const m=d.date.substring(0,7);if(!monthlyAll[m])monthlyAll[m]={v:0,r:0};monthlyAll[m].v++;monthlyAll[m].r+=(d.amount||0);});
+  const mKAll=[...new Set([...Object.keys(monthlyAll),..._allMatch.map(d=>d.date?d.date.substring(0,7):"").filter(Boolean)])].sort();
+  mk("chartMonthly","bar",{
+    labels:mKAll.map(m=>MN[m.split("-")[1]]||m),
+    datasets:[
+      {label:"الزيارات",data:mKAll.map(m=>(monthlyAll[m]||{v:0}).v),backgroundColor:"#38bdf8",borderRadius:5,yAxisID:"y"},
+      {label:"الإيرادات",data:mKAll.map(m=>(monthlyAll[m]||{r:0}).r),type:"line",borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.1)",fill:true,tension:0.4,yAxisID:"y1",pointRadius:5,pointBackgroundColor:"#34d399"}
+    ]
+  },{plugins:{legend:{labels:{color:lc(),font:{family:"Cairo"}}}},
+     scales:{y:{position:"right",ticks:{color:"#38bdf8"},grid:gridCfg},y1:{position:"left",ticks:{color:"#34d399"},grid:{display:false}},x:{ticks:xTicks(),grid:{display:false}}}});
+
+  /* mK for filtered data (used by other sections) */
   const monthly={};
   med.forEach(d=>{if(!d.date)return;const m=d.date.substring(0,7);if(!monthly[m])monthly[m]={v:0,r:0};monthly[m].v++;monthly[m].r+=d.amount;});
   matchData.forEach(d=>{if(!d.date)return;const m=d.date.substring(0,7);if(!monthly[m])monthly[m]={v:0,r:0};monthly[m].v++;monthly[m].r+=(d.amount||0);});
   const mKset=new Set([...Object.keys(monthly),...matchData.map(d=>d.date?d.date.substring(0,7):"").filter(Boolean)]);
   const mK=[...mKset].sort();
-  mk("chartMonthly","bar",{
-    labels:mK.map(m=>MN[m.split("-")[1]]||m),
-    datasets:[
-      {label:"الزيارات",data:mK.map(m=>(monthly[m]||{v:0}).v),backgroundColor:"#38bdf8",borderRadius:5,yAxisID:"y"},
-      {label:"الإيرادات",data:mK.map(m=>(monthly[m]||{r:0}).r),type:"line",borderColor:"#34d399",backgroundColor:"rgba(52,211,153,0.1)",fill:true,tension:0.4,yAxisID:"y1",pointRadius:5,pointBackgroundColor:"#34d399"}
-    ]
-  },{plugins:{legend:{labels:{color:lc(),font:{family:"Cairo"}}}},
-     scales:{y:{position:"right",ticks:{color:"#38bdf8"},grid:gridCfg},y1:{position:"left",ticks:{color:"#34d399"},grid:{display:false}},x:{ticks:xTicks(),grid:{display:false}}}});
 
   // دمج كل البيانات للملخص التلقائي: زيارات منزلية + ملف المباريات
   const allFull=[...med,...matchData.map(d=>({...d,visit_type:"مباراة",amount:d.amount||0}))];
