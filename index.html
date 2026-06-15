@@ -2011,7 +2011,7 @@ function renderVisitsAlerts(med, mK, vtG, medAll) {
 }
 
 /* ── Sort functions ── */
-function sortPract(btn,by){practSort=by;btn.closest(".tabs").querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));btn.classList.add("active");renderAll();}
+function sortPract(btn,by){practSort=by;btn.closest(".tabs").querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));btn.classList.add("active");const sy=window.scrollY;renderAll();requestAnimationFrame(()=>window.scrollTo(0,sy));}
 function filterPractTable(){const q=document.getElementById("practSearch").value.trim().toLowerCase();document.querySelectorAll("#practBody tr").forEach(r=>{const name=r.cells[1]?r.cells[1].textContent.toLowerCase():"";r.style.display=!q||name.includes(q)?"":"none";});}
 
 /* ── Export ── */
