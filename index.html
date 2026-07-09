@@ -277,6 +277,100 @@ body.light tr:hover{background:rgba(3,105,161,0.04) !important;}
   canvas{max-height:200px!important;}
   .kpi-grid{grid-template-columns:repeat(4,1fr)!important;}
 }
+/* زر إظهار/إخفاء الفلاتر — مخفي على الكمبيوتر (القاعدة الأساسية قبل الـ media query) */
+#mfToggle{display:none;align-items:center;justify-content:center;gap:7px;width:100%;
+  background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;border-radius:10px;
+  padding:11px;font-family:"Cairo";font-weight:700;font-size:0.85rem;cursor:pointer;margin-bottom:12px;}
+/* ══════════════════════════════════════════════════════
+   📱 نسخة الجوال — Mobile Responsive (≤768px)
+   تنطبق على شاشات الجوال فقط. نسخة الكمبيوتر لا تتأثر إطلاقاً.
+   ══════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  html,body{overflow-x:hidden;max-width:100%;}
+  body{padding-bottom:6px;-webkit-text-size-adjust:100%;}
+  canvas,img{max-width:100%;}
+
+  /* ── الهيدر ── */
+  .header{padding:11px 14px;gap:8px;position:sticky;top:0;z-index:101;}
+  .header h1{font-size:1.05rem;}
+  .header-right{gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+  .subtitle{font-size:0.72rem;}
+  .btn-theme{padding:5px 8px;font-size:0.7rem;}
+  .btn-upload{padding:6px 11px;font-size:0.72rem;}
+
+  /* ── شريط التنقل: أزرار قابلة للتمرير أفقياً داخل الشريط ── */
+  .section-nav{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;gap:6px;padding:8px 12px;top:0;position:sticky;z-index:100;}
+  .section-nav::-webkit-scrollbar{display:none;}
+  .nav-item{font-size:0.8rem;padding:7px 15px;flex:0 0 auto;}
+
+  /* ── الحاوية ── */
+  .container{padding:12px 10px;}
+
+  /* ── الفلاتر: لوحة قابلة للطي ── */
+  #mfToggle{display:flex;}
+  .filters-bar{position:static;flex-direction:row;flex-wrap:wrap;gap:9px;padding:12px;
+    border-radius:12px;margin-bottom:12px;box-shadow:none;}
+  .filters-bar.mf-hidden{display:none;}
+  .filter-group{flex:1 1 46%;min-width:0;}
+  .filter-group select,.filter-group .ms-btn,.filter-group .ms-wrap{width:100%;min-width:0;font-size:0.85rem;padding:9px 10px;}
+  .filters-bar .btn-reset,.filters-bar .btn-export,.filters-bar .btn-print{flex:1 1 46%;justify-content:center;padding:9px;font-size:0.8rem;}
+  .filter-badge{flex:1 1 100%;text-align:center;}
+
+  /* ── بطاقات المؤشرات: عمودان ── */
+  .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:9px;margin-bottom:11px;}
+  .kpi-card{padding:12px 11px;min-height:92px;border-radius:12px;}
+  .kpi-label{font-size:0.68rem;white-space:normal;}
+  .kpi-value{font-size:1.15rem;}
+  .kpi-sub{font-size:0.62rem;}
+  .kpi-delta{font-size:0.6rem;}
+
+  /* ── الرسوم البيانية: عمود واحد ── */
+  .charts-grid{grid-template-columns:1fr!important;gap:11px;}
+  .chart-card{padding:12px;border-radius:12px;}
+  .chart-card canvas{max-height:260px;}
+  .section-title{font-size:0.98rem;scroll-margin-top:70px;}
+
+  /* ── أيام الأسبوع ── */
+  .day-grid{grid-template-columns:repeat(4,1fr);gap:6px;}
+  .day-card .day-count{font-size:1.05rem;}
+
+  /* ── تحويل كل الجداول إلى بطاقات (ما عدا الخريطة الحرارية) ── */
+  .table-card,.special-card{padding:12px 11px;overflow-x:visible;border-radius:12px;}
+  .table-card>div[style*="overflow"],.special-card>div[style*="overflow"]{max-height:none!important;overflow:visible!important;}
+  .dash-section table:not(.matrix-table){display:block;width:100%;}
+  .dash-section table:not(.matrix-table) thead{display:none;}
+  .dash-section table:not(.matrix-table) tbody,
+  .dash-section table:not(.matrix-table) tfoot{display:block;width:100%;}
+  .dash-section table:not(.matrix-table) tr{display:block;width:100%;background:var(--bg-deep)!important;
+    border:1px solid var(--border);border-radius:11px;margin-bottom:10px;padding:6px 12px;}
+  .dash-section table:not(.matrix-table) tr:hover{background:var(--bg-deep)!important;}
+  .dash-section table:not(.matrix-table) td{display:flex;justify-content:space-between;align-items:center;
+    gap:12px;padding:7px 0;border:none;border-bottom:1px solid var(--border-row);text-align:left;font-size:0.84rem;}
+  .dash-section table:not(.matrix-table) tr td:last-child{border-bottom:none;}
+  .dash-section table:not(.matrix-table) td::before{content:attr(data-label);font-weight:700;
+    color:var(--text-sub);font-size:0.74rem;text-align:right;flex-shrink:0;}
+  .dash-section table:not(.matrix-table) td:not([data-label])::before{content:"";}
+  .dash-section table:not(.matrix-table) td .bar-wrap{flex:1;min-width:90px;}
+  /* صف الإجمالي داخل البطاقات */
+  .dash-section table:not(.matrix-table) tfoot tr{background:rgba(52,211,153,0.08)!important;border-color:#34d399;}
+
+  /* ── الخريطة الحرارية: تمرير أفقي داخل صندوقها فقط ── */
+  .matrix-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* ── التبويبات وأزرار الترتيب ── */
+  .tabs{gap:7px;}
+  .tab{padding:7px 14px;font-size:0.8rem;}
+  #practSearch{width:100%;flex:1 1 100%!important;}
+
+  /* ── النوافذ المنبثقة (تفاصيل الممارس / الفروع) ── */
+  .modal-overlay .modal,.modal{max-width:95vw!important;width:95vw!important;padding:18px 15px;max-height:88vh;overflow-y:auto;}
+
+  /* ── الملخصات ── */
+  .summary-card{padding:13px 15px;}
+  .summary-text{font-size:0.82rem;line-height:1.8;}
+  .alert-item{font-size:0.78rem;}
+}
 </style>
 </head>
 <body>
@@ -1578,6 +1672,7 @@ function render(){
   const ms=document.getElementById("matchSearch");if(ms)ms.value="";
   const mc=document.getElementById("matchSearchCount");if(mc)mc.textContent="";
   document.getElementById("ambBody").innerHTML=ambData.sort((a,b)=>a.date>b.date?1:-1).map(d=>`<tr><td>${d.date}</td><td>${d.patient}</td><td>${d.driver}</td><td>${d.branch}</td><td class="amount-cell">${fmtC(d.amount)}</td><td>${d.payment}</td><td>${d.notes}</td></tr>`).join("")||empty(7);
+  try{_mobileLabelTables();}catch(e){}
 }
 
 
@@ -2157,6 +2252,34 @@ function showSection(secId){
   }
   window.scrollTo({top:0,behavior:'smooth'});
 }
+/* ══════════════ 📱 تحسينات الجوال ══════════════ */
+/* يحوّل خلايا الجداول إلى بطاقات: يقرأ عناوين الأعمدة ويضيفها كـ data-label.
+   يعمل فقط على شاشات الجوال — على الكمبيوتر لا يغيّر أي شيء مرئي. */
+function _mobileLabelTables(){
+  if(window.innerWidth>768)return;
+  document.querySelectorAll('.dash-section table:not(.matrix-table)').forEach(tbl=>{
+    const heads=[...tbl.querySelectorAll('thead th')].map(th=>th.textContent.trim());
+    if(!heads.length)return;
+    tbl.querySelectorAll('tbody tr, tfoot tr').forEach(tr=>{
+      [...tr.children].forEach((td,i)=>{ if(heads[i]!==undefined&&heads[i]!=="") td.setAttribute('data-label',heads[i]); });
+    });
+  });
+}
+/* زر الفلاتر القابل للطي على الجوال */
+function _initMobileFilters(){
+  if(window.innerWidth>768)return;
+  const bar=document.querySelector('.filters-bar');
+  if(!bar||document.getElementById('mfToggle'))return;
+  const btn=document.createElement('button');
+  btn.id='mfToggle';
+  btn.innerHTML='⚙️ عرض الفلاتر';
+  bar.classList.add('mf-hidden');
+  btn.onclick=()=>{
+    const hidden=bar.classList.toggle('mf-hidden');
+    btn.innerHTML=hidden?'⚙️ عرض الفلاتر':'✕ إخفاء الفلاتر';
+  };
+  bar.parentNode.insertBefore(btn,bar);
+}
 /* scroll nav removed */
 
 /* ── Init ── */
@@ -2181,6 +2304,9 @@ buildPatientNameMap(RAW);
 populateFilters(RAW);applyFilters();
 }
 _initDash();
+_initMobileFilters();
+_mobileLabelTables();
+window.addEventListener("resize",()=>{_mobileLabelTables();});
 function _setSyncBar(ok,msg){const el=document.getElementById("lastDataDate");if(!el)return;el.style.color=ok?"#22c55e":"#ef4444";el.textContent=msg;el.dataset.synced="1";}
 (async function(){_setSyncBar(false,"🔄 جاري التحديث...");try{const[vR,mR]=await Promise.all([fetch(_VS_URL,{cache:"no-store"}),fetch(_MS_URL,{cache:"no-store"})]);if(!vR.ok||!mR.ok)throw new Error("fetch failed");const[vT,mT]=await Promise.all([vR.text(),mR.text()]);const nV=_parseVisitsCSV(vT),nM=_parseMatchesCSV(mT);if(nV.length>0){RAW=nV;MATCHES_RAW=nM.length>0?nM:MATCHES_RAW;console.log("✅ Google Sheets:",RAW.length,"visits,",MATCHES_RAW.length,"matches");_initDash();const now=new Date();const time=now.getHours().toString().padStart(2,"0")+":"+now.getMinutes().toString().padStart(2,"0");_setSyncBar(true,"✅ محدّث — "+time);}}catch(e){console.warn("⚠️ Using embedded data:",e.message);_setSyncBar(false,"⚠️ غير متصل");}})();
 ["filterVisitType","filterPractitioner","filterBranch","filterPayment","filterDriver"].forEach(id=>{
@@ -2209,11 +2335,7 @@ function openPractModal(name){
     </div>`;
   }).join("");
   const recent=allVisits.slice().sort((a,b)=>a.date>b.date?-1:1).slice(0,10);
-  const recentHtml=recent.map(d=>`<div style="display:flex;justify-content:space-between;font-size:0.76rem;padding:3px 0;border-bottom:1px solid var(--border-row)">
-    <span style="color:var(--text-muted)">${d.date}</span>
-    <span>${d.patient}</span>
-    <span style="color:#34d399">${fmtC(d.amount)} ر.س</span>
-  </div>`).join("");
+  const recentHtml=`<div style="max-height:160px;overflow-y:auto;border-radius:6px;border:1px solid var(--border-row)"><table style="width:100%;border-collapse:collapse;font-size:0.74rem"><tbody>${recent.map(d=>`<tr style="border-bottom:1px solid var(--border-row)"><td style="padding:4px 6px;color:var(--text-muted)">${d.date}</td><td style="padding:4px 6px">${d.patient}</td><td style="padding:4px 6px;color:#34d399;text-align:left;white-space:nowrap">${fmtC(d.amount)} ر.س</td></tr>`).join("")}</tbody></table></div>`;
 
   document.getElementById("practModalName").textContent=name;
   document.getElementById("practModalContent").innerHTML=`
